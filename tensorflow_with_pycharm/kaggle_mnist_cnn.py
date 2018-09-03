@@ -60,10 +60,10 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    batch = mydata.mini_batch(50)
+    data = mydata.mini_batch(50)
     test_data = mydata.get_test()
     for i in range(1000):
-        next(batch)
+        batch = next(data)
         if i % 100 == 0:
             train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
             print("step %d, training accuracy %g" % (i, train_accuracy))

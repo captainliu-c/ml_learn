@@ -83,3 +83,5 @@ class MnistData(object):
 if __name__ == "__main__":
     mnist = MnistData()
     data = mnist.mini_batch(10)
+    batch = next(data)
+    print(batch[0])
