@@ -1,5 +1,6 @@
 import tensorflow as tf
 import temp_inputdata
+import numpy as np
 
 mydata = temp_inputdata.MnistData()
 
@@ -58,14 +59,19 @@ train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
-with tf.Session() as sess:
+with tf.Session(config=tf.ConfigProto(device_count={"CPU": 2}, inter_op_parallelism_threads=0)) as sess:
     sess.run(tf.global_variables_initializer())
     data = mydata.mini_batch(50)
     test_data = mydata.get_test()
-    for i in range(1000):
+    sub = mydata.sub_data()
+    for i in range(10000):
         batch = next(data)
         if i % 100 == 0:
             train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
             print("step %d, training accuracy %g" % (i, train_accuracy))
         train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
     print("test accuracy %g" % accuracy.eval(feed_dict={x: test_data[0], y_: test_data[1], keep_prob: 1.0}))
+
+    result = y_conv.eval(feed_dict={x: sub, keep_prob: 1.0})
+    file = mydata.transform_y(result)
+    np.savetxt('E:\kaggle_data\mnist\mysub.csv', file, delimiter=',')
