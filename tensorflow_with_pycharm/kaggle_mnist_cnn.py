@@ -1,6 +1,5 @@
 import tensorflow as tf
 import temp_inputdata
-import numpy as np
 
 mydata = temp_inputdata.MnistData()
 
@@ -49,29 +48,34 @@ h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 keep_prob = tf.placeholder("float")
 h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-# 全连接层
+# flatten
 W_fc2 = weight_variable([1024, 10])
 b_fc2 = bias_variable([10])
 y_conv = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
+# 全连接
 cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
 train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
-with tf.Session(config=tf.ConfigProto(device_count={"CPU": 2}, inter_op_parallelism_threads=0)) as sess:
-    sess.run(tf.global_variables_initializer())
-    data = mydata.mini_batch(50)
-    test_data = mydata.get_test()
-    sub = mydata.sub_data()
-    for i in range(10000):
-        batch = next(data)
-        if i % 100 == 0:
-            train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
-            print("step %d, training accuracy %g" % (i, train_accuracy))
-        train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
-    print("test accuracy %g" % accuracy.eval(feed_dict={x: test_data[0], y_: test_data[1], keep_prob: 1.0}))
+# 获得数据
+data = mydata.mini_batch(50)
+test_data = mydata.get_test()
+sub = mydata.sub_data()
 
-    result = y_conv.eval(feed_dict={x: sub, keep_prob: 1.0})
-    file = mydata.transform_y(result)
-    np.savetxt('E:\kaggle_data\mnist\mysub.csv', file, delimiter=',')
+# 创建session，开始跑
+sess = tf.InteractiveSession()
+tf.global_variables_initializer().run()
+for i in range(500):
+    batch = next(data)
+    train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+    if i % 100 == 0:
+        train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
+        print("step %d, training accuracy %g" % (i, train_accuracy))
+print("test accuracy %g" % accuracy.eval(feed_dict={x: test_data[0], y_: test_data[1], keep_prob: 1.0}))
+
+# 需要一个保存model的功能，直接在内部跑，过于占用内存
+result = y_conv.eval(feed_dict={x: sub, keep_prob: 1.0})
+mydata.transform_y(result)
+sess.close()

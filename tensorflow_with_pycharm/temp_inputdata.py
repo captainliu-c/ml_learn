@@ -6,8 +6,6 @@ class MnistData(object):
     def __init__(self):  # 注意split
         self.__train_data = np.loadtxt(r'E:\kaggle_data\mnist\train.csv', dtype="float32", delimiter=',', skiprows=1)
         self.__test_data = np.loadtxt(r'E:\kaggle_data\mnist\test.csv', dtype="float32", delimiter=',', skiprows=1)
-        self.__sub_data = np.loadtxt(r'E:\kaggle_data\mnist\sample_submission.csv',
-                                     dtype="int", delimiter=',', skiprows=1)
         self.__x = self.__train_data[:, 1:]
         self.__y = self.__train_data[:, 0]
         self.__size = 0.2
@@ -84,6 +82,7 @@ class MnistData(object):
             my_data.append(data_y)
             yield my_data
 
+    # 从文件中获得test数据
     def get_test(self):
         my_test = []
         x_test, y_test = self.__make_tensor(tot="test")
@@ -91,16 +90,18 @@ class MnistData(object):
         my_test.append(y_test)
         return my_test
 
+    # 将test数据中的x进行归一化
     def sub_data(self):
         test_x = self.__regulate(self.__test_data)
         return test_x
 
     # 将y矩阵转换回向量，同时将结果以csv的格式保存到本地
-
-    def transform_y(self, y):
-        result = np.argmax(y, axis=1)
-        # csv = np.c_(self.__sub_data[:, 1], result)
-        return result
+    @staticmethod
+    def transform_y(y):
+        result = np.argmax(y, axis=1).ravel()
+        np.savetxt('E:\kaggle_data\mnist\mysub.csv', result, delimiter=',')
+        print('file have been saved')
+        return None
 
 
 if __name__ == "__main__":
