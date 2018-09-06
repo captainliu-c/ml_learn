@@ -2,6 +2,10 @@ import tensorflow as tf
 import temp_inputdata
 
 mydata = temp_inputdata.MnistData()
+ckpt_path = './ckpt/test-model.ckpt'
+config = tf.ConfigProto(
+    # config bla bla
+)
 
 
 def weight_variable(shape):
@@ -63,19 +67,28 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 data = mydata.mini_batch(50)
 test_data = mydata.get_test()
 sub = mydata.sub_data()
+saver = tf.train.Saver()  # 位置要在创建变量的下面
 
 # 创建session，开始跑
-sess = tf.InteractiveSession()
+sess = tf.InteractiveSession(config=config)
 tf.global_variables_initializer().run()
-for i in range(500):
+for i in range(100):
     batch = next(data)
     train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
     if i % 100 == 0:
         train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
         print("step %d, training accuracy %g" % (i, train_accuracy))
-print("test accuracy %g" % accuracy.eval(feed_dict={x: test_data[0], y_: test_data[1], keep_prob: 1.0}))
-
-# 需要一个保存model的功能，直接在内部跑，过于占用内存
-result = y_conv.eval(feed_dict={x: sub, keep_prob: 1.0})
-mydata.transform_y(result)
+save_path = saver.save(sess, ckpt_path, global_step=1)
+print("the path of the model is:", save_path)
 sess.close()
+
+# 需要一个保存model的功能，直接在内部跑，过于占用内存 
+with tf.Session(config=config) as sess2:
+    saver.restore(sess2, ckpt_path + '-' + str(1))
+    print("test accuracy %g" % accuracy.eval(feed_dict={x: test_data[0], y_: test_data[1], keep_prob: 1.0}))
+
+# 本地机子内存小，只有8个G，只能test data和sub数据都比较大，放在一个session里面，内存容易超 | 没啥用，该崩还是崩
+with tf.Session(config=config) as sess3:
+    saver.restore(sess3, ckpt_path + '-' + str(1))
+    result = y_conv.eval(feed_dict={x: sub, keep_prob: 1.0})
+    mydata.transform_y(result)
