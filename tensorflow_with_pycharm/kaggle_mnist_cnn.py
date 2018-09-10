@@ -4,7 +4,10 @@ import temp_inputdata
 mydata = temp_inputdata.MnistData()
 ckpt_path = './ckpt/test-model.ckpt'
 config = tf.ConfigProto(
-    # config bla bla
+    device_count={'CPU': 4},
+    inter_op_parallelism_threads=4,
+    intra_op_parallelism_threads=4,
+    log_device_placement=True
 )
 
 
@@ -72,9 +75,9 @@ saver = tf.train.Saver()  # 位置要在创建变量的下面
 # 创建session，开始跑
 sess = tf.InteractiveSession(config=config)
 tf.global_variables_initializer().run()
-for i in range(100):
+for i in range(10000):
     batch = next(data)
-    train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+    train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.4})
     if i % 100 == 0:
         train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
         print("step %d, training accuracy %g" % (i, train_accuracy))
