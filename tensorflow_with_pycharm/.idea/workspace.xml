@@ -11,6 +11,7 @@
   <component name="CoverageDataManager">
     <SUITE FILE_PATH="coverage/tensorflow_with_pycharm$pytest_in_kaggle_mnist_lstm_py.coverage" NAME="pytest in kaggle_mnist_lstm.py Coverage Results" MODIFIED="1536543050370" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/tensorflow_with_pycharm$temp_inputdata.coverage" NAME="temp_inputdata Coverage Results" MODIFIED="1536042756883" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/tensorflow_with_pycharm$kaggle_mnist_lstm.coverage" NAME="kaggle_mnist_lstm Coverage Results" MODIFIED="1536630592023" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="DatabaseView">
     <option name="SHOW_INTERMEDIATE" value="true" />
@@ -65,33 +66,33 @@
         <counts>
           <entry key="project.closed" value="16" />
           <entry key="project.open.time.0" value="1" />
-          <entry key="project.open.time.6" value="4" />
+          <entry key="project.open.time.6" value="5" />
           <entry key="project.open.time.7" value="8" />
           <entry key="project.open.time.8" value="3" />
-          <entry key="project.opened" value="16" />
+          <entry key="project.opened" value="17" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="Python Console" value="4" />
-          <entry key="py" value="7534" />
+          <entry key="py" value="9425" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="7538" />
+          <entry key="Python" value="9429" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="pstat" value="1" />
-          <entry key="py" value="8" />
+          <entry key="py" value="19" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="Profiler Session" value="1" />
-          <entry key="Python" value="8" />
+          <entry key="Python" value="19" />
         </counts>
       </usages-collector>
     </session>
@@ -101,30 +102,19 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/kaggle_mnist_cnn.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-516">
-              <caret line="32" column="46" lean-forward="true" selection-start-line="32" selection-start-column="46" selection-end-line="32" selection-end-column="46" />
-              <folding>
-                <element signature="e#0#23#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/kaggle_mnist_lstm.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="612">
-              <caret line="84" lean-forward="true" selection-start-line="84" selection-end-line="84" />
+            <state relative-caret-position="629">
+              <caret line="127" lean-forward="true" selection-start-line="127" selection-end-line="127" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
-                <element signature="e#207#850#0" />
-                <element signature="e#901#1746#0" />
-                <marker date="1536568238783" expanded="true" signature="307:323" ph="..." />
-                <marker date="1536568238783" expanded="true" signature="1792:1793" ph="..." />
-                <marker date="1536568238783" expanded="true" signature="2218:2223" ph="..." />
+                <element signature="e#207#849#0" />
+                <element signature="e#901#1792#0" />
+                <element signature="e#2223#2419#0" />
+                <marker date="1536643045672" expanded="true" signature="366:382" ph="..." />
+                <marker date="1536643045672" expanded="true" signature="1827:1828" ph="..." />
+                <marker date="1536643045672" expanded="true" signature="2336:2341" ph="..." />
               </folding>
             </state>
           </provider>
@@ -169,9 +159,9 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="62" />
-    <option name="y" value="-14" />
+  <component name="ProjectFrameBounds" extendedState="7">
+    <option name="x" value="56" />
+    <option name="y" value="-8" />
     <option name="width" value="1401" />
     <option name="height" value="981" />
   </component>
@@ -181,6 +171,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -192,7 +183,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -246,6 +236,9 @@
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -406,28 +399,29 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1456" height="876" extended-state="6" />
+    <frame x="-8" y="-8" width="1456" height="876" extended-state="7" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.4979757" weight="0.24928367" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.4979757" weight="0.10673352" />
       <window_info id="Structure" order="1" sideWeight="0.5020243" side_tool="true" weight="0.1790831" />
       <window_info id="Favorites" order="2" side_tool="true" weight="0.3295129" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32928476" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.3508772" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4980143" weight="0.35231316" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4980143" weight="0.32523617" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32793522" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32793522" />
       <window_info anchor="bottom" id="Terminal" order="8" sideWeight="0.49960285" weight="1.0" />
-      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50143266" side_tool="true" weight="0.32253712" />
-      <window_info anchor="bottom" id="Python Console" order="10" sideWeight="0.49856734" weight="0.4979757" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.5028653" side_tool="true" weight="0.31578946" />
+      <window_info anchor="bottom" id="Python Console" order="10" sideWeight="0.49713466" weight="0.41160592" />
       <window_info anchor="bottom" id="Docker" order="11" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" order="12" show_stripe_button="false" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info active="true" anchor="right" x="0" y="0" width="314" height="676" id="Documentation" order="3" sideWeight="0.5006748" side_tool="true" visible="true" weight="0.26934096" />
+      <window_info anchor="right" x="0" y="0" width="314" height="676" id="Documentation" order="3" sideWeight="0.5006748" side_tool="true" visible="true" weight="0.26862463" />
       <window_info anchor="right" id="Database" order="4" sideWeight="0.49932525" weight="0.3295129" />
       <window_info anchor="right" id="SciView" order="5" sideWeight="0.49932525" weight="0.3295129" />
       <window_info anchor="right" id="Coverage" order="6" side_tool="true" />
@@ -475,6 +469,37 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/framework/errors_impl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="176">
+          <caret line="86" selection-start-line="86" selection-end-line="86" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/codecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="168">
+          <caret line="331" selection-start-line="331" selection-end-line="331" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/framework/ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="116">
+          <caret line="1578" selection-start-line="1578" selection-end-line="1578" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/kaggle_mnist_cnn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="401">
+          <caret line="90" column="81" lean-forward="true" selection-start-line="90" selection-start-column="81" selection-end-line="90" selection-end-column="81" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/mnist_cnn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="17">
@@ -484,8 +509,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/temp_inputdata.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="657">
-          <caret line="100" column="45" selection-start-line="100" selection-start-column="45" selection-end-line="100" selection-end-column="45" />
+        <state relative-caret-position="1153">
+          <caret line="96" lean-forward="true" selection-start-line="96" selection-end-line="96" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
             <marker date="1536117395092" expanded="true" signature="133:454" ph="..." />
@@ -495,34 +520,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kaggle_mnist_cnn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-516">
-          <caret line="32" column="46" lean-forward="true" selection-start-line="32" selection-start-column="46" selection-end-line="32" selection-end-column="46" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/framework/ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="116">
-          <caret line="1716" selection-start-line="1716" selection-end-line="1716" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/kaggle_mnist_lstm.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="612">
-          <caret line="84" lean-forward="true" selection-start-line="84" selection-end-line="84" />
+        <state relative-caret-position="629">
+          <caret line="127" lean-forward="true" selection-start-line="127" selection-end-line="127" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
-            <element signature="e#207#850#0" />
-            <element signature="e#901#1746#0" />
-            <marker date="1536568238783" expanded="true" signature="307:323" ph="..." />
-            <marker date="1536568238783" expanded="true" signature="1792:1793" ph="..." />
-            <marker date="1536568238783" expanded="true" signature="2218:2223" ph="..." />
+            <element signature="e#207#849#0" />
+            <element signature="e#901#1792#0" />
+            <element signature="e#2223#2419#0" />
+            <marker date="1536643045672" expanded="true" signature="366:382" ph="..." />
+            <marker date="1536643045672" expanded="true" signature="1827:1828" ph="..." />
+            <marker date="1536643045672" expanded="true" signature="2336:2341" ph="..." />
           </folding>
         </state>
       </provider>
