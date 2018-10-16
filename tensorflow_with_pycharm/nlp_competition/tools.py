@@ -1,4 +1,5 @@
 import numpy as np
+from collections import Iterable
 
 
 def check_sentence_length(sentences, control='off'):
@@ -15,8 +16,25 @@ def check_sentence_length(sentences, control='off'):
         return None
 
 
-def blank_delete(the_list):
-    while '' in the_list:
-        the_list.remove('')
-    while '' in the_list:
-        raise ValueError('There is a blank, the index is: ', the_list.index(''))
+def target_delete(the_list, target=''):
+    while target in the_list:
+        the_list.remove(target)
+    while target in the_list:
+        raise ValueError('There is a blank, the index is: ', the_list.index(target))
+
+
+def flatten(the_list, skip_type=(bytes, str)):
+    for item in the_list:
+        if isinstance(item, Iterable) and not isinstance(item, skip_type):
+            yield from flatten(item)
+        else:
+            yield item
+
+
+def list_save_index(the_list):
+    print('the length of the list is %d' % len(the_list))
+    temp_list = []
+    for i in the_list:
+        temp_list.append(str(i+'_'+str(the_list.index(i))))
+    return dict(zip(temp_list, list(range(len(the_list)))))
+
