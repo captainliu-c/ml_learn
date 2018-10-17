@@ -32,7 +32,7 @@ class DataProcess(object):
         self.__tags_index = None  # range [[538,558], [143,145]...]
         self.__separator_comma_index = None  # point [2, 12, 23...]
         # self.__special_commas = '！！？＂＃＄％%＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》〔〕〚〛〜〝〞〟–—‘’‛“”„‟…‧﹏.、'
-        self.__special_commas = '！。？！，、；：“”（）《》〈〉【】『』「」﹃﹄〔〕…—～﹏￥¨⋯)(,.一%\[-\];'  # 记得转义]
+        self.__special_commas = '！。？，、；：“”（）《》〈〉【】〔〕…—,.一%\[-\]'  # 记得转义]
         self.__skip_comma = '#'
 
     @property
@@ -210,26 +210,68 @@ class DataProcess(object):
         result.append(self.skip_comma)
         return ''.join(result), b_index, i_index
 
-    def __add_tags(self, y_paths):
-        y_datas_list = []
-        with open(y_paths, 'rb') as y_file:
+    @staticmethod
+    def __sort_y(y_path):
+        y = []
+        with open(y_path, 'rb') as y_file:
             y_datas = y_file.read().decode('utf-8')
-        with open(y_paths.replace(self.file_types[1], self.file_types[0]), 'rb') as x_file:
-            x_sentences = x_file.read().decode('utf-8')
-        y_datas = re.split(r'\n', y_datas)
-        tools.target_delete(y_datas)
-        for item in y_datas:  # y_datas_list[0] = ['T1', 'Disease', '1845', '1850', '1型糖尿病']
-            y_datas_list.append(re.split(r'\s+', item))
+        y_datas = re.split('\n', y_datas)
+        tools.target_delete(y_datas)  # 好像不好使
+        for item in y_datas:  # 记得把x的/n删除
+            if ';' in item:
+                temp = re.split('\s+', item)
+                fix_y = temp
+                y_ = fix_y[:3]
+                y_.extend(re.split(';', fix_y[3]))
+                y_.append(fix_y[4])
+                y_.append(''.join(fix_y[5:]))
+                for i in range(4):
+                    y_[i+2] = int(y_[i+2])
+            else:
+                y_ = re.split('\s+', item)
+                for i in range(2):
+                    y_[i+2] = int(y_[i+2])
+            y.append(y_)
+        y.sort(key=lambda x: x[2])
+        return y
 
-        # 根据item[1]的类型对item[2]~[3]位置的文字进行标注
-        previous_length = len(x_sentences)
-        for y_data in y_datas_list:
-            entity2tag, b_index, i_index = self.__entity2tag(y_data)
-            # print('The entity is%s and the entity code is %s' % (str(y_data), entity2tag))
-            # 直接修改x_sentences，用切片
-            x_sentences = x_sentences[:b_index]+entity2tag+x_sentences[i_index:]
-            # 这样不行，由于每次追加entity2tag后，由于#的加入和忽略[;]导致文本整体的对应关系的变化，后续index无法对应正确文字
-        assert previous_length == len(x_sentences)
+    # def __add_tags(self, y_paths):
+    #     y_datas_list = []
+    #     with open(y_paths, 'rb') as y_file:
+    #         y_datas = y_file.read().decode('utf-8')
+    #     with open(y_paths.replace(self.file_types[1], self.file_types[0]), 'rb') as x_file:
+    #         x_sentences = x_file.read().decode('utf-8')
+    #     y_datas = re.split(r'\n', y_datas)
+    #     tools.target_delete(y_datas)
+    #     for item in y_datas:  # y_datas_list[0] = ['T1', 'Disease', '1845', '1850', '1型糖尿病']
+    #         y_datas_list.append(re.split(r'\s+', item))
+    #
+    #     # 根据item[1]的类型对item[2]~[3]位置的文字进行标注
+    #     previous_length = len(x_sentences)
+    #     for y_data in y_datas_list:
+    #         entity2tag, b_index, i_index = self.__entity2tag(y_data)
+    #         # print('The entity is%s and the entity code is %s' % (str(y_data), entity2tag))
+    #         # 直接修改x_sentences，用切片
+    #         x_sentences = x_sentences[:b_index]+entity2tag+x_sentences[i_index:]
+    #         # 这样不行，由于每次追加entity2tag后，由于#的加入和忽略[;]导致文本整体的对应关系的变化，后续index无法对应正确文字
+    #     assert previous_length == len(x_sentences)
+
+    def __add_tags2(self, sorted_y, x_file_path):
+        # print(x_file_path)
+        with open(x_file_path, 'rb') as x_file:
+            x_file = x_file.read().decode('utf-8')
+        x_file = self.__file2char(x_file)
+        for data in sorted_y:
+            if len(data) > 5:
+                pass
+                # 带换行的实体  # ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
+                # 需要分两次来标注实体，/n的换行符就标记为#，需不需要标记？因为最终是要删的
+            else:
+                pass
+                # 不带换行的实体
+                # 直接对列表对应的元素进行修改  # ['T346', 'Test', 6621, 6626, 'HBA1C']
+            # print(data, ' : ', x_file[int(data[2]):data[3]])
+        return 1
 
     def __x_data_process(self, x):
         return x
@@ -254,7 +296,9 @@ class DataProcess(object):
         for y_file_path in self.y_files_path:
             # 先制作y
             # 根据x和y，对x进行标记
-            y_with_tag = self.__add_tags(y_file_path)
+            sorted_y = self.__sort_y(y_file_path)
+            x_file_path = re.sub('%s' % self.file_types[1], '%s' % self.file_types[0], y_file_path)
+            y_with_tag = self.__add_tags2(sorted_y, x_file_path)
             break
 
 
