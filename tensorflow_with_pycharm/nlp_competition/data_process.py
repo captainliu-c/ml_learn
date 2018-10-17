@@ -13,8 +13,8 @@ import tools
 
 class DataProcess(object):
     def __init__(self):
-        self.__input_path = r'C:\Users\nhn\Desktop\ruijin_round1_train1_20181010'
-        self.__output_path = r'C:\Users\nhn\Desktop\process_data'
+        self.__input_path = r'C:\Users\Neo\Desktop\ruijin_round1_train1_20181010'
+        self.__output_path = r'C:\Users\Neo\Desktop\process_data'
         self.__file_types = ['TXT', 'ann']
         self.__validation_percentage = 20
         self.__test_percentage = 0
@@ -260,16 +260,28 @@ class DataProcess(object):
         # print(x_file_path)
         with open(x_file_path, 'rb') as x_file:
             x_file = x_file.read().decode('utf-8')
+            # there is different from y | x:  糖尿病病程较长  |  25262626262626
+            # 是因为出现了两个相同的索引的实体造成的
         x_file = self.__file2char(x_file)
+        print('x_file: ', x_file[359:366])
         for data in sorted_y:
             if len(data) > 5:
                 pass
-                # 带换行的实体  # ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
+                # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
                 # 需要分两次来标注实体，/n的换行符就标记为#，需不需要标记？因为最终是要删的
             else:
-                pass
-                # 不带换行的实体
-                # 直接对列表对应的元素进行修改  # ['T346', 'Test', 6621, 6626, 'HBA1C']
+                # 不带换行的实体 ['T346', 'Test', 6621, 6626, 'HBA1C']
+                # 直接对列表对应的元素进行修改
+                if data[4] != ''.join(x_file[data[2]:data[3]]):
+                    print('the y data is: ', data)
+                    print('--there is different from y | x: ', data[4], ' | ', ''.join(x_file[data[2]:data[3]]))
+                # print('begin: ', x_file[data[2]])
+                # assert data[4] == ''.join(x_file[data[2]:data[3]])
+                key_begin = str(self.tags_prefixes[0]+data[1])
+                key_in = str(self.tags_prefixes[1]+data[1])
+                x_file[data[2]] = self.tags[key_begin]
+                for j in range(data[3]-data[2]-1):
+                    x_file[data[2]+1+j] = self.tags[key_in]
             # print(data, ' : ', x_file[int(data[2]):data[3]])
         return 1
 
