@@ -17,6 +17,9 @@ def check_sentence_length(sentences, control='off'):
 
 
 def target_delete(the_list, target=''):
+    # item_type = type(the_list[0])
+    # if item_type == list:
+    #     the_list = list(map(''.join, the_list))
     while target in the_list:
         the_list.remove(target)
     while target in the_list:

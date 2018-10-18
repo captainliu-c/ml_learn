@@ -1,5 +1,5 @@
-import tensorflow
-import numpy as np
+# import tensorflow
+# import numpy as np
 import os.path
 import glob
 import re
@@ -13,8 +13,8 @@ import tools
 
 class DataProcess(object):
     def __init__(self):
-        self.__input_path = r'C:\Users\Neo\Desktop\ruijin_round1_train1_20181010'
-        self.__output_path = r'C:\Users\Neo\Desktop\process_data'
+        self.__input_path = r'C:\Users\nhn\Desktop\ruijin_round1_train1_20181010'
+        self.__output_path = r'C:\Users\nhn\Desktop\process_data'
         self.__file_types = ['TXT', 'ann']
         self.__validation_percentage = 20
         self.__test_percentage = 0
@@ -25,15 +25,8 @@ class DataProcess(object):
                             'Method', 'Treatment', 'Operation', 'Anatomy', 'Level', 'Duration', 'SideEff']
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags = self.__create_tags(self.__tags_list)
-        self.__x_files_path = self.__get_files(self.file_types[0])
         self.__y_files_path = self.__get_files(self.file_types[1])
-        self.__x_files = self.__open_files(self.x_files_path)  #
-        # self.__x_total_index = list(map(tools.list_save_index, self.__open_files(self.x_files_path)))
-        self.__tags_index = None  # range [[538,558], [143,145]...]
-        self.__separator_comma_index = None  # point [2, 12, 23...]
-        # self.__special_commas = '！！？＂＃＄％%＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》〔〕〚〛〜〝〞〟–—‘’‛“”„‟…‧﹏.、'
-        self.__special_commas = '！。？，、；：“”（）《》〈〉【】〔〕…—,.一%\[-\]'  # 记得转义]
-        self.__skip_comma = '#'
+        # self.__special_commas = '！。？，、；：“”（）《》〈〉【】〔〕…—,.一%\[-\]'  # 记得转义]
 
     @property
     def input_path(self):
@@ -87,9 +80,9 @@ class DataProcess(object):
     def commas(self):
         return self.__commas
 
-    @property
-    def sentence_mini_length(self):
-        return self.__sentence_mini_length
+    # @property
+    # def sentence_mini_length(self):
+    #     return self.__sentence_mini_length
 
     @property
     def control(self):
@@ -113,24 +106,8 @@ class DataProcess(object):
         return self.__tags_prefixes
 
     @property
-    def x_files_path(self):
-        return self.__x_files_path
-
-    @property
     def y_files_path(self):
         return self.__y_files_path
-
-    @property
-    def x_files(self):
-        return self.__x_files
-
-    @property
-    def special_commas(self):
-        return self.__special_commas
-
-    @property
-    def skip_comma(self):
-        return self.__skip_comma
 
     @staticmethod
     def __file2char(file):
@@ -147,6 +124,58 @@ class DataProcess(object):
                 files_list.append(f.read().decode('utf-8'))
         return files_list
 
+    @staticmethod
+    def __sort_y(y_datas):
+        y = []
+        y_datas = re.split('\n', y_datas)
+        tools.target_delete(y_datas)  # 好像不好使
+        for item in y_datas:  # 记得把x的/n删除 | 这种情况下换行符不算实体
+            if ';' in item:
+                temp = re.split('\s+', item)
+                fix_y = temp
+                y_ = fix_y[:3]
+                y_.extend(re.split(';', fix_y[3]))
+                y_.append(fix_y[4])
+                y_.append(''.join(fix_y[5:]))
+                for i in range(4):
+                    y_[i+2] = int(y_[i+2])
+            else:
+                y_ = re.split('\s+', item)  # T110	Test_Value 2402 2413	<3.3 mmol/L | 这样的数据会多分出来一部分
+                if len(y_) > 5:             # 此处需要把空格加回去，也就是此处的空格算实体
+                    temp = y_
+                    y_ = y_[:4]
+                    y_.append(str(temp[4]+' '+temp[5]))
+                    for i in range(2):
+                        y_[i+2] = int(y_[i+2])
+                else:
+                    for i in range(2):
+                        y_[i+2] = int(y_[i+2])
+            y.append(y_)
+        y.sort(key=lambda x: x[2])
+        return y
+
+    @staticmethod
+    def __collect_entities_index(sorted_y):
+        entities_index = []
+        for data in sorted_y:
+            begin_index, end_index = data[2], data[3]
+            if len(data) > 5:  # ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
+                begin_index_2, end_index_2 = data[4], data[5]
+                entities_index.extend([x for x in range(begin_index, end_index)])
+                entities_index.extend([x for x in range(begin_index_2, end_index_2)])
+            else:
+                entities_index.extend([x for x in range(begin_index, end_index)])
+        # entities_index = set(entities_index)
+        return entities_index
+
+    @staticmethod
+    def check_y(y_with_tag, entities_index):
+        for y in y_with_tag:
+            if not y.isdigit():
+                if not y.isspace():
+                    print('-There is a wrong char[%s], the index is %d' % (y, y_with_tag.index(y)))
+                    print('--The data is in entities index:', y in entities_index)
+
     def __create_tags(self, tags_list):  # BIO标注集, 总计共30类，超过10的怎么标注
         keys = ['Other']
         for tag in tags_list:
@@ -160,163 +189,97 @@ class DataProcess(object):
         file_glob = os.path.join(self.input_path, '*.'+file_type)
         return glob.glob(file_glob)
 
-    def __data_process(self, x_path):  # 注意下x和y的对应关系不要错位 | 对数据做预处理
-        print('\n-We will process the file:%s' % x_path)
-        data = []
-        index = 0
-        with open(x_path, 'rb') as x_file:
-            x_sentences = x_file.read().decode('utf-8')
-            x_sentences = re.sub(r'\n', '', x_sentences)  # 原始文本乱换行，所以要把原本的换行干掉
-            x_sentences = re.split(('%s' % self.commas), x_sentences)  # 以句号分割的句子组成的列表
-            tools.target_delete(x_sentences)
-            while index < len(x_sentences)-1:  # 检查由于self.__commas乱用，从而错误换行，最终出现异常短的句子
-                if len(x_sentences[index]) < self.__sentence_mini_length:
-                    print('--The sentence[%s]is too short, the length is %d ' %
-                          (x_sentences[index], len(x_sentences[index])))
-                    data.append(str(x_sentences[index]+x_sentences[index+1]))
-                    index += 1
-                else:
-                    data.append(x_sentences[index])
-                index += 1
-            data.append(x_sentences[-1])
-            del x_sentences
-        tools.check_sentence_length(data, self.__control)
-        # 收集Test_Value所对应的实体包含的特殊符号, 得到set
-        # 同时先按照ann文件制作y，然后同步删除x和y中同位置的相同符号[set除外]
-        # 确定：1.标记方式 2.Test_Value中对应的特殊符号处理方法
-        # 为什么要删除特殊符号，是因为每一个字符需要对应一个向量。特殊符号不需要？
-        return data  # 以句子为元素组成的list
+    def __entity2tags(self, x_file, data):
+        key_begin = str(self.tags_prefixes[0] + data[1])
+        key_in = str(self.tags_prefixes[1] + data[1])
+        begin_index = data[2]
+        end_index = data[3]
 
-    def __entity2tag(self, y_data):
-        result = []
-        word_wrap = False
-        for item in y_data:
-            if ';' in item:
-                word_wrap = True
-        if word_wrap:
-            # print('look: ', y_data)
-            i_index = int(y_data[4])-1  # ['T34', 'Symptom', '353', '356;357', '358', '年龄较', '大'] # 删除换行符的占位
+        if len(data) > 5:  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
+            begin_index_2 = data[4]
+            end_index_2 = data[5]
+            x_file[begin_index] = self.tags[key_begin]
+            for i in range(begin_index+1, end_index):
+                x_file[i] = self.tags[key_in]
+            for j in range(begin_index_2, end_index_2):
+                x_file[j] = self.tags[key_in]
         else:
-            i_index = int(y_data[3])
-        b_index = int(y_data[2])
-        entity_type = y_data[1]
-        key_begin = str(self.tags_prefixes[0]+entity_type)
-        key_in = str(self.tags_prefixes[1]+entity_type)
-        result.append(self.skip_comma)
-        result.append(self.tags[key_begin])
-        for i in range(i_index-b_index-1):
-            result.append(self.skip_comma)
-            result.append(self.tags[key_in])
-        result.append(self.skip_comma)
-        return ''.join(result), b_index, i_index
+            # 不带换行的实体 ['T346', 'Test', 6621, 6626, 'HBA1C'], 直接标注
+            if data[4] != ''.join(x_file[begin_index:end_index]):
+                print('the y data is: ', data)
+                print('--there is different from y | x: ', data[4], ' | ', ''.join(x_file[begin_index:end_index]))
+            assert data[4] == ''.join(x_file[begin_index:end_index])
 
-    @staticmethod
-    def __sort_y(y_path):
-        y = []
-        with open(y_path, 'rb') as y_file:
-            y_datas = y_file.read().decode('utf-8')
-        y_datas = re.split('\n', y_datas)
-        tools.target_delete(y_datas)  # 好像不好使
-        for item in y_datas:  # 记得把x的/n删除
-            if ';' in item:
-                temp = re.split('\s+', item)
-                fix_y = temp
-                y_ = fix_y[:3]
-                y_.extend(re.split(';', fix_y[3]))
-                y_.append(fix_y[4])
-                y_.append(''.join(fix_y[5:]))
-                for i in range(4):
-                    y_[i+2] = int(y_[i+2])
-            else:
-                y_ = re.split('\s+', item)
-                for i in range(2):
-                    y_[i+2] = int(y_[i+2])
-            y.append(y_)
-        y.sort(key=lambda x: x[2])
-        return y
+            x_file[begin_index] = self.tags[key_begin]
+            for j in range(end_index - begin_index - 1):
+                x_file[begin_index + 1 + j] = self.tags[key_in]
+        return x_file
 
-    # def __add_tags(self, y_paths):
-    #     y_datas_list = []
-    #     with open(y_paths, 'rb') as y_file:
-    #         y_datas = y_file.read().decode('utf-8')
-    #     with open(y_paths.replace(self.file_types[1], self.file_types[0]), 'rb') as x_file:
-    #         x_sentences = x_file.read().decode('utf-8')
-    #     y_datas = re.split(r'\n', y_datas)
-    #     tools.target_delete(y_datas)
-    #     for item in y_datas:  # y_datas_list[0] = ['T1', 'Disease', '1845', '1850', '1型糖尿病']
-    #         y_datas_list.append(re.split(r'\s+', item))
-    #
-    #     # 根据item[1]的类型对item[2]~[3]位置的文字进行标注
-    #     previous_length = len(x_sentences)
-    #     for y_data in y_datas_list:
-    #         entity2tag, b_index, i_index = self.__entity2tag(y_data)
-    #         # print('The entity is%s and the entity code is %s' % (str(y_data), entity2tag))
-    #         # 直接修改x_sentences，用切片
-    #         x_sentences = x_sentences[:b_index]+entity2tag+x_sentences[i_index:]
-    #         # 这样不行，由于每次追加entity2tag后，由于#的加入和忽略[;]导致文本整体的对应关系的变化，后续index无法对应正确文字
-    #     assert previous_length == len(x_sentences)
-
-    def __add_tags2(self, sorted_y, x_file_path):
-        # print(x_file_path)
-        with open(x_file_path, 'rb') as x_file:
-            x_file = x_file.read().decode('utf-8')
-            # there is different from y | x:  糖尿病病程较长  |  25262626262626
-            # 是因为出现了两个相同的索引的实体造成的
+    def __add_tags(self, sorted_y, x_file, entities_index):  # 判断是否是相同实体重复标注、判断是否是换行实体、对实体进行标注
         x_file = self.__file2char(x_file)
-        print('x_file: ', x_file[359:366])
-        for data in sorted_y:
-            if len(data) > 5:
-                pass
-                # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
-                # 需要分两次来标注实体，/n的换行符就标记为#，需不需要标记？因为最终是要删的
+        # print('-1-The length of the x file is %d' % len(x_file))
+        index = 1
+        count_skip = 0
+        y_with_tag = self.__entity2tags(x_file, sorted_y[0])
+        while index < len(sorted_y):
+            pre_data = sorted_y[index-1]
+            data = sorted_y[index]
+            if data[2] == pre_data[2]:
+                count_skip += 1
             else:
-                # 不带换行的实体 ['T346', 'Test', 6621, 6626, 'HBA1C']
-                # 直接对列表对应的元素进行修改
-                if data[4] != ''.join(x_file[data[2]:data[3]]):
-                    print('the y data is: ', data)
-                    print('--there is different from y | x: ', data[4], ' | ', ''.join(x_file[data[2]:data[3]]))
-                # print('begin: ', x_file[data[2]])
-                # assert data[4] == ''.join(x_file[data[2]:data[3]])
-                key_begin = str(self.tags_prefixes[0]+data[1])
-                key_in = str(self.tags_prefixes[1]+data[1])
-                x_file[data[2]] = self.tags[key_begin]
-                for j in range(data[3]-data[2]-1):
-                    x_file[data[2]+1+j] = self.tags[key_in]
-            # print(data, ' : ', x_file[int(data[2]):data[3]])
-        return 1
-
-    def __x_data_process(self, x):
-        return x
-
-    def __y_data_process(self, y):
-        return y
-
-    @staticmethod
-    def __special_commas_index(x_file, clean_x):
-        index = []
-        for data in clean_x:
-            index.append(x_file.index(data))  # 需要保证data是唯一的，要不然返回的是第一个匹配的
-        return index
+                y_with_tag = self.__entity2tags(y_with_tag, data)
+            index += 1
+        print('--We have skip %d datas, because of the same index have two entities' % count_skip)
+        for data in y_with_tag:
+            current_index = y_with_tag.index(data)
+            if current_index not in entities_index:
+                if data != self.commas:
+                    if not data.isspace():
+                        y_with_tag[current_index] = self.tags['Other']
+        # print('-2-The length of the x file is %d' % len(y_with_tag))
+        return y_with_tag
 
     def get_data(self):
-        # 使用x_file添加tag， 注意i_index-1
-        # 按照句号将list转换为shape = 句子数量，一行句子[一行句子合并成str]
-        # 使用re.sub对空格和特殊符号进行删除[保留实体对应的符号]，shape仍为=句子数量，一行句子 | 如何保证tag不与文本中原有的数字混淆
-        # 制作y，将句子映射为字符，并添加other tag
-        # 制作x
+        """
+        1. 对原始txt转化成list
+        2. 对ann文件进行处理，获得有序的实体的index
+        2.1 实体的index有存在于两行的问题
+        2.2 实体的index有在相同的index，存在两个实体的问题
+        3. 首先标记实体，接着标记other
+        4. 删除空格和换行符，并根据句号进行拆分句子
+        """
         y_sub = []
         for y_file_path in self.y_files_path:
-            # 先制作y
-            # 根据x和y，对x进行标记
-            sorted_y = self.__sort_y(y_file_path)
+            y_final = []
+            start_index = 0
             x_file_path = re.sub('%s' % self.file_types[1], '%s' % self.file_types[0], y_file_path)
-            y_with_tag = self.__add_tags2(sorted_y, x_file_path)
-            break
+            with open(y_file_path, 'rb') as y_file:
+                y_datas = y_file.read().decode('utf-8')
+                sorted_y = self.__sort_y(y_datas)
+                entities_index = self.__collect_entities_index(sorted_y)
+            with open(x_file_path, 'rb') as x_file:
+                x_file = x_file.read().decode('utf-8')
+                # print('-0-The length of the x file is %d' % len(x_file))
+                print('-The file is[%s]' % re.split('\\\\', x_file_path)[-1])
+                y_with_tag = self.__add_tags(sorted_y, x_file, entities_index)
+            tools.target_delete(y_with_tag, target=' ')
+            tools.target_delete(y_with_tag, target='\n')
+            index = 0
+            while index < len(y_with_tag):
+                data = y_with_tag[index]
+                if data == self.commas:
+                    y_final.append(y_with_tag[start_index:index])
+                    start_index = index+1
+                index += 1
+            tools.target_delete(y_final)
+            tools.check_sentence_length(y_final, control=self.control)
+            # 对不符合长度的sentence进行处理，丢弃或部位
+            y_sub.append(y_final)
 
 
 def main():
     my_data_process = DataProcess()
-    # my_data_process.control = 'on'
+    my_data_process.control = 'on'
     my_data_process.get_data()
 
 
