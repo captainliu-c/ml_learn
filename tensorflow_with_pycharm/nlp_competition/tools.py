@@ -2,8 +2,8 @@ import numpy as np
 from collections import Iterable
 
 
-def check_sentence_length(sentences, control='off'):
-    if control == 'on':
+def check_sentence_length(sentences, control=True):
+    if control:
         print('--The check process is running. We will check the length of each of the sentence')
         length_sentences = list(map(len, sentences))
         index_and_length = dict(zip(length_sentences, range(len(length_sentences))))
@@ -16,7 +16,7 @@ def check_sentence_length(sentences, control='off'):
         return None
 
 
-def target_delete(the_list, target=''):
+def target_delete(the_list, target=''):  # 如果元素是列表的话，如何删除空？
     # item_type = type(the_list[0])
     # if item_type == list:
     #     the_list = list(map(''.join, the_list))
@@ -41,3 +41,25 @@ def list_save_index(the_list):
         temp_list.append(str(i+'_'+str(the_list.index(i))))
     return dict(zip(temp_list, list(range(len(the_list)))))
 
+
+def check_entity_and_raw_dada(data, x_file, begin_index, end_index, check_control=True):
+    if check_control:
+        if len(data) > 5:  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
+            raw_x_file = str(''.join(x_file[begin_index:end_index])+' '+''.join(x_file[data[4]:data[5]]))
+            if data[-1] != raw_x_file:
+                print('--the y data is: ', data)
+                print('--[wrap]there is different from y | x: ', data[-1], ' | ', raw_x_file)
+        else:  # 不带换行的实体 ['T346', 'Test', 6621, 6626, 'HBA1C'], 直接标注
+            if data[-1] != ''.join(x_file[begin_index:end_index]):
+                print('--the y data is: ', data)
+                print('--there is different from y | x: ', data[-1], ' | ', ''.join(x_file[begin_index:end_index]))
+            # assert data[-1] == ''.join(x_file[begin_index:end_index])
+
+
+def check_final_data(x_data, y_final, times=5, gap=10, control=False):
+    if control:
+        i = 0
+        for _ in range(times):
+            print('x:', x_data[i:i+gap])
+            print('y', y_final[i:i+gap])
+            i += gap
