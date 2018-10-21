@@ -16,7 +16,7 @@ def check_sentence_length(sentences, control=True):
         return None
 
 
-def target_delete(the_list, target=''):  # 如果元素是列表的话，如何删除空？
+def target_delete(the_list, target=''):  # 目前只适用于一维数组
     # item_type = type(the_list[0])
     # if item_type == list:
     #     the_list = list(map(''.join, the_list))

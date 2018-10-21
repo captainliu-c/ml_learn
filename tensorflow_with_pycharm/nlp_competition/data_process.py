@@ -14,18 +14,18 @@ from collections import Counter
 
 class DataProcess(object):
     def __init__(self):
-        self.__input_path = r'C:\Users\nhn\Desktop\ruijin_round1_train1_20181010'
-        self.__output_path = r'C:\Users\nhn\Desktop\process_data\\'
+        self.__input_path = r'C:\Users\Neo\Desktop\ruijin_round1_train1_20181010'
+        self.__output_path = r'C:\Users\Neo\Desktop\process_data\\'
         self.__file_types = ['TXT', 'ann']
         self.__validation_percentage = 20
         self.__test_percentage = 0
         self.__commas = '。'
         self.__sentence_mini_length = 10
-        self.__dictionary_size = 5000
+        self.__dictionary_size = 1000
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
                             'Method', 'Treatment', 'Operation', 'Anatomy', 'Level', 'Duration', 'SideEff']
-        self.__setting_control = {'to_wrap_word': False, 'tag_is_int': False, 'is_self_outdata': False}
+        self.__setting_control = {'to_wrap_word': False, 'tag_is_int': False, 'is_self_outdata': True}
         self.__check_control = {'sentence_length': False, 'entity_and_rawdata': False, 'final_data': False}
         self.__tags = self.__create_tags(self.__tags_list)
         self.__y_files_path = self.__get_files(self.file_types[1])
@@ -133,8 +133,8 @@ class DataProcess(object):
     def __sort_y(y_datas):
         y = []
         y_datas = re.split('\n', y_datas)
-        tools.target_delete(y_datas)  # 好像不好使
-        for item in y_datas:  # 记得把x的/n删除 | 这种情况下换行符不算实体
+        tools.target_delete(y_datas)
+        for item in y_datas:
             if ';' in item:
                 temp = re.split('\s+', item, maxsplit=5)  # ['T34', 'Symptom', '353', '356;357', '358', '年龄较', '大']
                 fix_y = temp
@@ -203,7 +203,8 @@ class DataProcess(object):
                 x_file[begin_index + 1 + j] = self.tags[key_in]
         return x_file
 
-    def __add_tags(self, sorted_y, x_file, entities_index):  # 判断是否是相同实体重复标注、判断是否是换行实体、对实体进行标注
+    def __add_tags(self, sorted_y, x_file, entities_index):
+        """判断是否是相同实体重复标注、判断是否是换行实体、对实体进行标注"""
         x_file = self.__file2char(x_file)
         index = 1
         count_skip = 0
@@ -227,7 +228,7 @@ class DataProcess(object):
                         y_with_tag[current_index] = self.tags['Other']
         return y_with_tag
 
-    def get_data(self):
+    def make_data(self):
         """
         1. 对原始txt转化成list
         2. 对ann文件进行处理，获得有序的实体的index
@@ -239,6 +240,7 @@ class DataProcess(object):
         x_sub, y_sub = [], []
         for y_file_path in self.y_files_path:
             y_final = []
+            x_final = []
             start_index = 0
             x_file_path = re.sub('%s' % self.file_types[1], '%s' % self.file_types[0], y_file_path)
             with open(y_file_path, 'rb') as y_file:
@@ -260,49 +262,65 @@ class DataProcess(object):
             if self.setting_control['to_wrap_word']:
                 index = 0
                 while index < len(y_with_tag):
-                    data = y_with_tag[index]
-                    if data in self.commas:
+                    y_data = y_with_tag[index]
+                    x_data = x_data[index]
+                    if y_data in self.commas:
                         y_final.append(y_with_tag[start_index:index])
+                        assert x_data == y_data
+                        x_final.append(x_data[start_index:index])
                         start_index = index+1
                     index += 1
             else:
-                y_final = y_with_tag
-            tools.target_delete(y_final)  # 仍然有空的元素
+                y_final, x_final = y_with_tag, x_data
+            if type(y_final[0]) == list:
+                print('Attention: the y_final may have [[]] or [[[]]] data')
+            else:
+                tools.target_delete(y_final)
+                tools.target_delete(x_final)
             tools.check_sentence_length(y_final, control=self.check_control['sentence_length'])
             # 对不符合长度的sentence进行处理，丢弃或部位 | 未进行
             tools.check_final_data(x_data, y_final, times=5, gap=10, control=self.check_control['final_data'])
 
             path = os.path.join(self.output_path, x_file_name)
             if self.setting_control['is_self_outdata']:
+                # x_path = os.path.join(self.output_path, str('x_'+x_file_name[:-3]+'npy'))  #存早了
+                # y_path = os.path.join(self.output_path, str('y_'+x_file_name[:-3]+'npy'))
+                # np.save(x_path, x_data)
+                # np.save(y_path, y_final)
                 pass
             else:
                 with open(path, 'w', encoding='utf-8') as f:
                     j = 0
                     while j < len(x_data):
-                        if x_data[j] == self.commas:
-                            f.write(x_data[j] + ' ' + self.tags['Other'] + '\n' + '\n')
+                        if x_final[j] == self.commas:
+                            f.write(x_final[j] + ' ' + self.tags['Other'] + '\n' + '\n')
                         else:
-                            f.write(x_data[j]+' '+y_final[j]+'\n')
+                            f.write(x_final[j]+' '+y_final[j]+'\n')
                         j += 1
-            x_sub.append(x_data)
+            x_sub.append(x_final)
             y_sub.append(y_final)
-        return x_sub, y_sub
 
-    def get_dictionary(self, x_sub):
-        print('dictionary size=', self.dictionary_size)
-        total_chars = tools.flatten(x_sub)
-        unique_chars_length = len(Counter(total_chars))  # collections.Counter(words).most_common(vocabulary_size - 1)
-        # https://zhuanlan.zhihu.com/p/28979653
-        print('the real dictionary size=', unique_chars_length)
+        char_dictionary = self.__get_dictionary(x_sub)
+        for item in char_dictionary.items():
+            print(item)
+        return None
+
+    def __get_dictionary(self, x_sub):
         char_dictionary = {}
+        pre_dictionary = [('UNK', -1)]
+        total_chars = tools.flatten(x_sub)
+        # print('The real dictionary size=', len(Counter(total_chars)))
+        most_common_chars = Counter(total_chars).most_common(self.dictionary_size-1)
+        pre_dictionary.extend(most_common_chars)
+        # print(pre_dictionary)
+        for char, _ in pre_dictionary:
+            char_dictionary[char] = len(char_dictionary)
         return char_dictionary
 
 
 def main():
     my_data_process = DataProcess()
-    x_data, y_data = my_data_process.get_data()
-    # print(x_data[0])
-    # print(y_data[0])
+    my_data_process.make_data()
 
 
 if __name__ == '__main__':
