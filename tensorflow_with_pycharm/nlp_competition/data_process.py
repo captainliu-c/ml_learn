@@ -5,6 +5,7 @@ import glob
 import re
 import tools
 from collections import Counter
+from tqdm import tqdm
 
 """
 按照文件名，分别处理data和lable
@@ -14,19 +15,19 @@ from collections import Counter
 
 class DataProcess(object):
     def __init__(self):
-        self.__input_path = r'C:\Users\Neo\Desktop\ruijin_round1_train1_20181010'
-        self.__output_path = r'C:\Users\Neo\Desktop\process_data\\'
+        self.__input_path = r'C:\Users\nhn\Desktop\ruijin_round1_train1_20181010'
+        self.__output_path = r'C:\Users\nhn\Desktop\process_data\\'
         self.__file_types = ['TXT', 'ann']
         self.__validation_percentage = 20
         self.__test_percentage = 0
         self.__commas = '。'
         self.__sentence_mini_length = 10
-        self.__dictionary_size = 1000
+        self.__dictionary_size = 1000  # real 3242
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
                             'Method', 'Treatment', 'Operation', 'Anatomy', 'Level', 'Duration', 'SideEff']
         self.__setting_control = {'to_wrap_word': False, 'tag_is_int': False, 'is_self_outdata': True}
-        self.__check_control = {'sentence_length': False, 'entity_and_rawdata': False, 'final_data': False}
+        self.__check_control = {'sentence_length': False, 'entity_and_rawdata': True, 'final_data': False}
         self.__tags = self.__create_tags(self.__tags_list)
         self.__y_files_path = self.__get_files(self.file_types[1])
 
@@ -135,18 +136,17 @@ class DataProcess(object):
         y_datas = re.split('\n', y_datas)
         tools.target_delete(y_datas)
         for item in y_datas:
-            if ';' in item:
-                temp = re.split('\s+', item, maxsplit=5)  # ['T34', 'Symptom', '353', '356;357', '358', '年龄较', '大']
-                fix_y = temp
-                y_ = fix_y[:3]
-                y_.extend(re.split(';', fix_y[3]))
-                y_.extend(fix_y[4:])
-                for i in range(4):
-                    y_[i+2] = int(y_[i+2])
-            else:
-                y_ = re.split('\s+', item, maxsplit=4)  # T110	Test_Value 2402 2413	<3.3 mmol/L | 这样的数据会多分出来一部分
-                for i in range(2):
-                    y_[i+2] = int(y_[i+2])
+            # wrap_count = item.count(';')
+            wrap_count = len(re.findall('\d+;\d+', item))
+            y_ = re.split('\s+', item, maxsplit=(4+wrap_count))
+            temp = y_[:]
+            y_ = y_[:3]
+            for j in range(wrap_count):
+                y_.extend(re.split(';', temp[3+j]))  # ['T34', 'Symptom', '353', '356;357', '358', '年龄较', '大']
+            y_.extend(temp[-2:])
+            # print(y_)
+            for i in range(2+(wrap_count*2)):
+                y_[i + 2] = int(y_[i + 2])
             y.append(y_)
         y.sort(key=lambda x: x[2])
         return y
@@ -181,23 +181,40 @@ class DataProcess(object):
         file_glob = os.path.join(self.input_path, '*.'+file_type)
         return glob.glob(file_glob)
 
+    @staticmethod
+    def check_entity_and_raw_dada(data, x_file, check_control=True):
+        if check_control:
+            begin_index, end_index = data[2], data[3]
+            if len(data) > 5:  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
+                raw_x_file = str(''.join(x_file[begin_index:end_index]) + ' ' + ''.join(x_file[data[4]:data[5]]))
+                temp = re.findall('[A-Z]_[A-Z][a-z]+', raw_x_file)
+                if len(temp) != data[5]-begin_index:
+                    if data[-1] != raw_x_file:
+                        print('--the y data is: ', data)
+                        print('--[wrap]there is different from y | x: ', data[-1], ' | ', raw_x_file)
+            else:  # 不带换行的实体 ['T346', 'Test', 6621, 6626, 'HBA1C'], 直接标注
+                raw_x_file = ''.join(x_file[begin_index:end_index])
+                temp = re.findall('[A-Z]_[A-Z][a-z]+', raw_x_file)
+                if len(temp) != end_index - begin_index:
+                    if data[-1] != raw_x_file:
+                        print('--the y data is: ', data)
+                        print('--there is different from y | x: ', data[-1], ' | ', ''.join(x_file[begin_index:end_index]))
+
     def __entity2tags(self, x_file, data):
         key_begin = str(self.tags_prefixes[0] + data[1])
         key_in = str(self.tags_prefixes[1] + data[1])
         begin_index, end_index = data[2], data[3]
 
         if len(data) > 5:  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
-            tools.check_entity_and_raw_dada(data, x_file, begin_index, end_index,
-                                            check_control=self.check_control['entity_and_rawdata'])
-            begin_index_2, end_index_2 = data[4], data[5]
+            self.check_entity_and_raw_dada(data, x_file, self.check_control['entity_and_rawdata'])
+            begin_index_2, end_index_2 = data[4], data[5]  # 这里有问题，有多个;的情况，就不能只标记一次
             x_file[begin_index] = self.tags[key_begin]
             for i in range(begin_index+1, end_index):
                 x_file[i] = self.tags[key_in]
             for j in range(begin_index_2, end_index_2):
                 x_file[j] = self.tags[key_in]
         else:  # 不带换行的实体 ['T346', 'Test', 6621, 6626, 'HBA1C'], 直接标注
-            tools.check_entity_and_raw_dada(data, x_file, begin_index, end_index,
-                                            check_control=self.check_control['entity_and_rawdata'])
+            self.check_entity_and_raw_dada(data, x_file, self.check_control['entity_and_rawdata'])
             x_file[begin_index] = self.tags[key_begin]
             for j in range(end_index - begin_index - 1):
                 x_file[begin_index + 1 + j] = self.tags[key_in]
@@ -218,7 +235,7 @@ class DataProcess(object):
             else:
                 y_with_tag = self.__entity2tags(y_with_tag, data)
             index += 1
-        print('--We have skip %d datas, because of the same index have two entities' % count_skip)
+        # print('--We have skip %d datas, because of the same index have two entities' % count_skip)
         # 对剩余内容进行标记
         for data in y_with_tag:
             current_index = y_with_tag.index(data)
@@ -238,7 +255,7 @@ class DataProcess(object):
         4. 删除空格和换行符，并根据句号进行拆分句子
         """
         x_sub, y_sub = [], []
-        for y_file_path in self.y_files_path:
+        for y_file_path in tqdm(self.y_files_path):
             y_final = []
             x_final = []
             start_index = 0
@@ -293,7 +310,9 @@ class DataProcess(object):
                     j = 0
                     while j < len(x_data):
                         if x_final[j] == self.commas:
-                            f.write(x_final[j] + ' ' + self.tags['Other'] + '\n' + '\n')
+                            f.write(x_final[j] + ' O' + '\n' + '\n')
+                        elif y_final[j] == self.tags['Other']:
+                            f.write(x_final[j] + ' O' + '\n')
                         else:
                             f.write(x_final[j]+' '+y_final[j]+'\n')
                         j += 1
@@ -301,21 +320,21 @@ class DataProcess(object):
             y_sub.append(y_final)
 
         char_dictionary = self.__get_dictionary(x_sub)
-        for item in char_dictionary.items():
-            print(item)
+        # for item in char_dictionary.items():
+        #     print(item)
         return None
 
     def __get_dictionary(self, x_sub):
         char_dictionary = {}
         pre_dictionary = [('UNK', -1)]
         total_chars = tools.flatten(x_sub)
-        # print('The real dictionary size=', len(Counter(total_chars)))
-        most_common_chars = Counter(total_chars).most_common(self.dictionary_size-1)
-        pre_dictionary.extend(most_common_chars)
-        # print(pre_dictionary)
-        for char, _ in pre_dictionary:
-            char_dictionary[char] = len(char_dictionary)
-        return char_dictionary
+        print('The real dictionary size=', len(Counter(total_chars)))
+        # most_common_chars = Counter(total_chars).most_common(self.dictionary_size-1)
+        # pre_dictionary.extend(most_common_chars)
+        # # print(pre_dictionary)
+        # for char, _ in pre_dictionary:
+        #     char_dictionary[char] = len(char_dictionary)
+        # return char_dictionary
 
 
 def main():
