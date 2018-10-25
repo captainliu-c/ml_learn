@@ -20,14 +20,15 @@ class DataProcess(object):
         self.__file_types = ['TXT', 'ann']
         self.__validation_percentage = 20
         self.__test_percentage = 0
-        self.__commas = '。'
-        self.__sentence_mini_length = 10
-        self.__dictionary_size = 1000  # real 3242
+        self.__commas = ['。', ]  # ','
+        # self.__sentence_mini_length = 10
+        self.__time_step = 150  # train set中超过这个数的比例是0.117835
+        self.__dictionary_size = 3000  # real 3242
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
                             'Method', 'Treatment', 'Operation', 'Anatomy', 'Level', 'Duration', 'SideEff']
-        self.__setting_control = {'to_wrap_word': False, 'tag_is_int': False, 'is_self_outdata': True}
-        self.__check_control = {'sentence_length': False, 'entity_and_rawdata': True, 'final_data': False}
+        self.__setting_control = {'to_wrap_word': True, 'tag_is_int': False, 'is_self_outdata': True}
+        self.__check_control = {'sentence_length': False, 'entity_and_rawdata': False, 'final_data': False}
         self.__tags = self.__create_tags(self.__tags_list)
         self.__y_files_path = self.__get_files(self.file_types[1])
 
@@ -107,6 +108,10 @@ class DataProcess(object):
     def setting_control(self):
         return self.__setting_control
 
+    @property
+    def time_step(self):
+        return self.__time_step
+
     @staticmethod
     def __file2char(file):
         result = []
@@ -136,17 +141,17 @@ class DataProcess(object):
         y_datas = re.split('\n', y_datas)
         tools.target_delete(y_datas)
         for item in y_datas:
-            # wrap_count = item.count(';')
             wrap_count = len(re.findall('\d+;\d+', item))
             y_ = re.split('\s+', item, maxsplit=(4+wrap_count))
             temp = y_[:]
+            # 前3个 +中间N个 +后两个
             y_ = y_[:3]
             for j in range(wrap_count):
                 y_.extend(re.split(';', temp[3+j]))  # ['T34', 'Symptom', '353', '356;357', '358', '年龄较', '大']
             y_.extend(temp[-2:])
-            # print(y_)
+            # str2int
             for i in range(2+(wrap_count*2)):
-                y_[i + 2] = int(y_[i + 2])
+                y_[i+2] = int(y_[i+2])
             y.append(y_)
         y.sort(key=lambda x: x[2])
         return y
@@ -165,6 +170,28 @@ class DataProcess(object):
         # entities_index = set(entities_index)
         return entities_index
 
+    @staticmethod
+    def check_entity_and_raw_dada(data, x_file, check_control=True):
+        if check_control:
+            begin_index, end_index = data[2], data[3]
+            if len(data) > 5:  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
+                raw_x_file = str(''.join(x_file[begin_index:end_index]) + ' ' + ''.join(x_file[data[4]:data[5]]))
+                # raw_x_file只考虑了一个;出现的情况，所以在检查多个的时候会出问题
+                # 123_8.TXT的T219和41.TXT的T223存在这个情况，但是标注的时候是按照多个;来标注的
+                temp = re.findall('[A-Z]_[A-Z][a-z]+', raw_x_file)
+                if len(temp) != data[5] - begin_index:
+                    if data[-1] != raw_x_file:
+                        print('--the y data is: ', data)
+                        print('--[wrap]there is different from y | x: ', data[-1], ' | ', raw_x_file)
+            else:  # 不带换行的实体 ['T346', 'Test', 6621, 6626, 'HBA1C'], 直接标注
+                raw_x_file = ''.join(x_file[begin_index:end_index])
+                temp = re.findall('[A-Z]_[A-Z][a-z]+', raw_x_file)
+                if len(temp) != end_index - begin_index:
+                    if data[-1] != raw_x_file:
+                        print('--the y data is: ', data)
+                        print('--there is different from y | x: ', data[-1], ' | ',
+                              ''.join(x_file[begin_index:end_index]))
+
     def __create_tags(self, tags_list):  # BIO标注集, 总计共30类
         keys = ['Other']
         for tag in tags_list:
@@ -181,43 +208,21 @@ class DataProcess(object):
         file_glob = os.path.join(self.input_path, '*.'+file_type)
         return glob.glob(file_glob)
 
-    @staticmethod
-    def check_entity_and_raw_dada(data, x_file, check_control=True):
-        if check_control:
-            begin_index, end_index = data[2], data[3]
-            if len(data) > 5:  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
-                raw_x_file = str(''.join(x_file[begin_index:end_index]) + ' ' + ''.join(x_file[data[4]:data[5]]))
-                temp = re.findall('[A-Z]_[A-Z][a-z]+', raw_x_file)
-                if len(temp) != data[5]-begin_index:
-                    if data[-1] != raw_x_file:
-                        print('--the y data is: ', data)
-                        print('--[wrap]there is different from y | x: ', data[-1], ' | ', raw_x_file)
-            else:  # 不带换行的实体 ['T346', 'Test', 6621, 6626, 'HBA1C'], 直接标注
-                raw_x_file = ''.join(x_file[begin_index:end_index])
-                temp = re.findall('[A-Z]_[A-Z][a-z]+', raw_x_file)
-                if len(temp) != end_index - begin_index:
-                    if data[-1] != raw_x_file:
-                        print('--the y data is: ', data)
-                        print('--there is different from y | x: ', data[-1], ' | ', ''.join(x_file[begin_index:end_index]))
-
     def __entity2tags(self, x_file, data):
-        key_begin = str(self.tags_prefixes[0] + data[1])
-        key_in = str(self.tags_prefixes[1] + data[1])
+        key_begin, key_in = str(self.tags_prefixes[0] + data[1]), str(self.tags_prefixes[1] + data[1])
         begin_index, end_index = data[2], data[3]
+        loop_count = int((len(data)-3)/2)-1
 
-        if len(data) > 5:  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
-            self.check_entity_and_raw_dada(data, x_file, self.check_control['entity_and_rawdata'])
-            begin_index_2, end_index_2 = data[4], data[5]  # 这里有问题，有多个;的情况，就不能只标记一次
-            x_file[begin_index] = self.tags[key_begin]
-            for i in range(begin_index+1, end_index):
-                x_file[i] = self.tags[key_in]
-            for j in range(begin_index_2, end_index_2):
+        self.check_entity_and_raw_dada(data, x_file, self.check_control['entity_and_rawdata'])
+        x_file[begin_index] = self.tags[key_begin]  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
+        for i in range(begin_index + 1, end_index):
+            x_file[i] = self.tags[key_in]
+        for _ in range(loop_count):
+            begin_index_2, end_index_2 = 4, 5
+            for j in range(data[begin_index_2], data[end_index_2]):
                 x_file[j] = self.tags[key_in]
-        else:  # 不带换行的实体 ['T346', 'Test', 6621, 6626, 'HBA1C'], 直接标注
-            self.check_entity_and_raw_dada(data, x_file, self.check_control['entity_and_rawdata'])
-            x_file[begin_index] = self.tags[key_begin]
-            for j in range(end_index - begin_index - 1):
-                x_file[begin_index + 1 + j] = self.tags[key_in]
+            begin_index_2 += 2
+            end_index_2 += 2
         return x_file
 
     def __add_tags(self, sorted_y, x_file, entities_index):
@@ -240,7 +245,7 @@ class DataProcess(object):
         for data in y_with_tag:
             current_index = y_with_tag.index(data)
             if current_index not in entities_index:
-                if data != self.commas:
+                if data not in self.commas:
                     if not data.isspace():
                         y_with_tag[current_index] = self.tags['Other']
         return y_with_tag
@@ -267,59 +272,66 @@ class DataProcess(object):
             with open(x_file_path, 'rb') as x_file:
                 x_file = x_file.read().decode('utf-8')
                 x_file_name = re.split('\\\\', x_file_path)[-1]
-                print('-The file is[%s]' % x_file_name)
+                if True in self.check_control.values():
+                    print('-The file is[%s]' % x_file_name)
                 y_with_tag = self.__add_tags(sorted_y, x_file, entities_index)
-            tools.target_delete(y_with_tag, target=' ')
             tools.target_delete(y_with_tag, target='\n')
 
-            x_data = [x for x in x_file]
-            tools.target_delete(x_data, target=' ')
-            tools.target_delete(x_data, target='\n')
+            x_raw_data = [x for x in x_file]
+            tools.target_delete(x_raw_data, target='\n')
 
             if self.setting_control['to_wrap_word']:
                 index = 0
                 while index < len(y_with_tag):
                     y_data = y_with_tag[index]
-                    x_data = x_data[index]
+                    x_data = x_raw_data[index]
                     if y_data in self.commas:
                         y_final.append(y_with_tag[start_index:index])
                         assert x_data == y_data
-                        x_final.append(x_data[start_index:index])
+                        x_final.append(x_raw_data[start_index:index])
                         start_index = index+1
                     index += 1
             else:
-                y_final, x_final = y_with_tag, x_data
-            if type(y_final[0]) == list:
-                print('Attention: the y_final may have [[]] or [[[]]] data')
-            else:
-                tools.target_delete(y_final)
-                tools.target_delete(x_final)
+                y_final, x_final = y_with_tag, x_raw_data
+
             tools.check_sentence_length(y_final, control=self.check_control['sentence_length'])
             # 对不符合长度的sentence进行处理，丢弃或部位 | 未进行
-            tools.check_final_data(x_data, y_final, times=5, gap=10, control=self.check_control['final_data'])
 
-            path = os.path.join(self.output_path, x_file_name)
-            if self.setting_control['is_self_outdata']:
-                # x_path = os.path.join(self.output_path, str('x_'+x_file_name[:-3]+'npy'))  #存早了
-                # y_path = os.path.join(self.output_path, str('y_'+x_file_name[:-3]+'npy'))
-                # np.save(x_path, x_data)
-                # np.save(y_path, y_final)
-                pass
-            else:
-                with open(path, 'w', encoding='utf-8') as f:
-                    j = 0
-                    while j < len(x_data):
-                        if x_final[j] == self.commas:
-                            f.write(x_final[j] + ' O' + '\n' + '\n')
-                        elif y_final[j] == self.tags['Other']:
-                            f.write(x_final[j] + ' O' + '\n')
-                        else:
-                            f.write(x_final[j]+' '+y_final[j]+'\n')
-                        j += 1
-            x_sub.append(x_final)
-            y_sub.append(y_final)
+            # path = os.path.join(self.output_path, x_file_name)
+            # if self.setting_control['is_self_outdata']:
+            #     # x_path = os.path.join(self.output_path, str('x_'+x_file_name[:-3]+'npy'))  #存早了
+            #     # y_path = os.path.join(self.output_path, str('y_'+x_file_name[:-3]+'npy'))
+            #     # np.save(x_path, x_data)
+            #     # np.save(y_path, y_final)
+            #     pass
+            # else:
+            #     with open(path, 'w', encoding='utf-8') as f:
+            #         j = 0
+            #         while j < len(x_data):
+            #             if x_final[j] == self.commas[0]:  # 因为只是句号换行，所以不是in
+            #                 f.write(x_final[j] + ' O' + '\n' + '\n')
+            #             elif y_final[j] == self.tags['Other']:
+            #                 f.write(x_final[j] + ' O' + '\n')
+            #             else:
+            #                 f.write(x_final[j]+' '+y_final[j]+'\n')
+            #             j += 1
+            x_sub.extend(x_final)
+            y_sub.extend(y_final)
+            assert len(x_sub) == len(y_sub)
 
-        char_dictionary = self.__get_dictionary(x_sub)
+        if type(y_sub[0]) == list:
+            print('Attention: the y_final may have [[]] or [[[]]] data')
+        else:
+            tools.target_delete(y_sub)
+            tools.target_delete(x_sub)
+
+        sentences_count = len(y_sub)
+        too_long_sentence = [i for i in list(map(len, y_sub)) if i > self.time_step]
+        print('the amount of the data[sentence] is %d' % sentences_count)
+        print('the rate of the too long sentence is %g, the number is %d'
+              % (len(too_long_sentence)/sentences_count, len(too_long_sentence)))
+        print(too_long_sentence)
+        # char_dictionary = self.__get_dictionary(x_sub)
         # for item in char_dictionary.items():
         #     print(item)
         return None
@@ -328,13 +340,13 @@ class DataProcess(object):
         char_dictionary = {}
         pre_dictionary = [('UNK', -1)]
         total_chars = tools.flatten(x_sub)
-        print('The real dictionary size=', len(Counter(total_chars)))
-        # most_common_chars = Counter(total_chars).most_common(self.dictionary_size-1)
-        # pre_dictionary.extend(most_common_chars)
-        # # print(pre_dictionary)
-        # for char, _ in pre_dictionary:
-        #     char_dictionary[char] = len(char_dictionary)
-        # return char_dictionary
+        # print('The real dictionary size=', len(Counter(total_chars)))
+        most_common_chars = Counter(total_chars).most_common(self.dictionary_size-1)
+        pre_dictionary.extend(most_common_chars)
+        print(pre_dictionary)
+        for char, _ in pre_dictionary:
+            char_dictionary[char] = len(char_dictionary)
+        return char_dictionary
 
 
 def main():
