@@ -17,9 +17,6 @@ def check_sentence_length(sentences, control=True):
 
 
 def target_delete(the_list, target=''):  # 目前只适用于一维数组
-    # item_type = type(the_list[0])
-    # if item_type == list:
-    #     the_list = list(map(''.join, the_list))
     while target in the_list:
         the_list.remove(target)
     while target in the_list:
@@ -63,3 +60,13 @@ def check_final_data(x_data, y_final, times=5, gap=10, control=False):
             print('x:', x_data[i:i+gap])
             print('y', y_final[i:i+gap])
             i += gap
+
+
+def check_too_long_sentence(y_sub, time_step, control=False):
+    if control:
+        sentences_count = len(y_sub)
+        too_long_sentence = [i for i in list(map(len, y_sub)) if i > time_step]
+        print('the amount of the data[sentence] is %d' % sentences_count)
+        print('the rate of the too long sentence is %g, the number is %d'
+              % (len(too_long_sentence) / sentences_count, len(too_long_sentence)))
+        print(too_long_sentence)

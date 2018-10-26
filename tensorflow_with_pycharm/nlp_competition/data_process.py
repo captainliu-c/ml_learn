@@ -1,4 +1,3 @@
-# import tensorflow as tf
 import numpy as np
 import os.path
 import glob
@@ -7,28 +6,25 @@ import tools
 from collections import Counter
 from tqdm import tqdm
 
-"""
-按照文件名，分别处理data和lable
-处理的方式暂时pass。以ndrray保存文件。
-"""
-
 
 class DataProcess(object):
     def __init__(self):
-        self.__input_path = r'C:\Users\nhn\Desktop\ruijin_round1_train1_20181010'
-        self.__output_path = r'C:\Users\nhn\Desktop\process_data\\'
+        self.__input_path = r'C:\Users\nhn\Desktop\data\train'
+        self.__output_path = r'C:\Users\nhn\Desktop\data\process_data\\'
         self.__file_types = ['TXT', 'ann']
         self.__validation_percentage = 20
         self.__test_percentage = 0
         self.__commas = ['。', ]  # ','
-        # self.__sentence_mini_length = 10
+        self.__padding_comma = '#'
         self.__time_step = 150  # train set中超过这个数的比例是0.117835
-        self.__dictionary_size = 3000  # real 3242
+        self.__dictionary_size = 3000  # real 3242, 经过根据句子长度截断处理后变为3147
+        self.__batch_size = 128
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
                             'Method', 'Treatment', 'Operation', 'Anatomy', 'Level', 'Duration', 'SideEff']
-        self.__setting_control = {'to_wrap_word': True, 'tag_is_int': False, 'is_self_outdata': True}
-        self.__check_control = {'sentence_length': False, 'entity_and_rawdata': False, 'final_data': False}
+        self.__setting_control = {'to_wrap_word': True, 'tag_is_int': True, 'is_self_outdata': True}
+        self.__check_control = {'sentence_length': False, 'entity_and_rawdata': False, 'final_data': False,
+                                'check_2long_sentence': False}
         self.__tags = self.__create_tags(self.__tags_list)
         self.__y_files_path = self.__get_files(self.file_types[1])
 
@@ -83,6 +79,14 @@ class DataProcess(object):
     @property
     def commas(self):
         return self.__commas
+
+    @property
+    def padding_comma(self):
+        return self.__padding_comma
+
+    @property
+    def batch_size(self):
+        return self.__batch_size
 
     @property
     def tags(self):
@@ -171,7 +175,7 @@ class DataProcess(object):
         return entities_index
 
     @staticmethod
-    def check_entity_and_raw_dada(data, x_file, check_control=True):
+    def check_entity_and_raw_data(data, x_file, check_control=True):
         if check_control:
             begin_index, end_index = data[2], data[3]
             if len(data) > 5:  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
@@ -213,7 +217,7 @@ class DataProcess(object):
         begin_index, end_index = data[2], data[3]
         loop_count = int((len(data)-3)/2)-1
 
-        self.check_entity_and_raw_dada(data, x_file, self.check_control['entity_and_rawdata'])
+        self.check_entity_and_raw_data(data, x_file, self.check_control['entity_and_rawdata'])
         x_file[begin_index] = self.tags[key_begin]  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
         for i in range(begin_index + 1, end_index):
             x_file[i] = self.tags[key_in]
@@ -246,65 +250,92 @@ class DataProcess(object):
             current_index = y_with_tag.index(data)
             if current_index not in entities_index:
                 if data not in self.commas:
-                    if not data.isspace():
-                        y_with_tag[current_index] = self.tags['Other']
+                    # if data != '\n':
+                    y_with_tag[current_index] = self.tags['Other']
         return y_with_tag
 
-    def make_data(self):
+    def __get_dictionary(self, x_sub):
+        char_dictionary = {}
+        pre_dictionary = []  # pre_dictionary = [('UNK', -1)]
+        total_chars = tools.flatten(x_sub)
+        # print('The real dictionary size=', len(Counter(total_chars)))
+        most_common_chars = Counter(total_chars).most_common(self.dictionary_size)
+        pre_dictionary.extend(most_common_chars)
+        for char, _ in pre_dictionary:
+            if char != self.padding_comma:  # '#'会映射为0
+                char_dictionary[char] = len(char_dictionary)+1
+        return char_dictionary
+
+    def make_batch(self, x_sub2, y_sub):
+        batch_num = 0
+        sample_num = len(x_sub2)
+        for start in tqdm(range(0, sample_num, self.batch_size)):
+            batch_path = self.output_path + str(batch_num) + '.npz'
+            end = min(start+self.batch_size, sample_num)
+            x_batch = x_sub2[start:end]
+            y_batch = y_sub[start:end]
+            np.savez(batch_path, X=x_batch, y=y_batch)
+            batch_num += 1
+        print('Finish! Batch number is %d' % batch_num)
+
+    def make_train_data(self):
         """
         1. 对原始txt转化成list
         2. 对ann文件进行处理，获得有序的实体的index
         2.1 实体的index有存在于两行的问题
-        2.2 实体的index有在相同的index，存在两个实体的问题
+        2.2 实体的index有在相同的index，存在两个实体的问题:跳过处理,不跳过也行
         3. 首先标记实体，接着标记other
-        4. 删除空格和换行符，并根据句号进行拆分句子
+        4. 删除换行符[未删除]，并根据句号进行拆分句子
         """
         x_sub, y_sub = [], []
         for y_file_path in tqdm(self.y_files_path):
-            y_final = []
-            x_final = []
+            y_final, x_final = [], []
             start_index = 0
             x_file_path = re.sub('%s' % self.file_types[1], '%s' % self.file_types[0], y_file_path)
+            x_file_name = re.split('\\\\', x_file_path)[-1]
+            if True in self.check_control.values():
+                print('-The file is[%s]' % x_file_name)
             with open(y_file_path, 'rb') as y_file:
                 y_datas = y_file.read().decode('utf-8')
-                sorted_y = self.__sort_y(y_datas)
-                entities_index = self.__collect_entities_index(sorted_y)
             with open(x_file_path, 'rb') as x_file:
                 x_file = x_file.read().decode('utf-8')
-                x_file_name = re.split('\\\\', x_file_path)[-1]
-                if True in self.check_control.values():
-                    print('-The file is[%s]' % x_file_name)
-                y_with_tag = self.__add_tags(sorted_y, x_file, entities_index)
-            tools.target_delete(y_with_tag, target='\n')
 
-            x_raw_data = [x for x in x_file]
-            tools.target_delete(x_raw_data, target='\n')
-
+            # 获得一些基本数据：sorted_y、entities_index
+            sorted_y = self.__sort_y(y_datas)
+            entities_index = self.__collect_entities_index(sorted_y)
+            # 获得y_with_tag，
+            y_with_tag = self.__add_tags(sorted_y, x_file, entities_index)  # target_delete(y_with_tag, target='\n')
+            # 获得x data
+            x_raw_data = [x for x in x_file]  # target_delete(x_raw_data, target='\n')
+            assert len(y_with_tag) == len(x_raw_data)
+            # 筛分句子，并对句子进行处理
             if self.setting_control['to_wrap_word']:
                 index = 0
-                while index < len(y_with_tag):
-                    y_data = y_with_tag[index]
+                while index < len(y_with_tag):  # 如果最后一个字符不是self.commas的话，最后一段data会少append进去
+                    y_data = y_with_tag[index]  # 但是似乎影响也不大
                     x_data = x_raw_data[index]
                     if y_data in self.commas:
-                        y_final.append(y_with_tag[start_index:index])
                         assert x_data == y_data
-                        x_final.append(x_raw_data[start_index:index])
+                        if index - start_index < self.time_step:
+                            y_sentence = y_with_tag[start_index:index]
+                            x_sentence = x_raw_data[start_index:index]
+                            for _ in range(self.time_step-(index-start_index)):
+                                y_sentence.append(0)
+                                x_sentence.append(self.padding_comma)  # 仅仅是0.txt的话,就补了10089个,补的太多会不会有问题
+                            y_final.append(y_sentence)
+                            x_final.append(x_sentence)
+                        else:
+                            assert index >= start_index+self.time_step
+                            y_final.append(y_with_tag[start_index:start_index+self.time_step])
+                            x_final.append(x_raw_data[start_index:start_index+self.time_step])
                         start_index = index+1
                     index += 1
             else:
                 y_final, x_final = y_with_tag, x_raw_data
 
             tools.check_sentence_length(y_final, control=self.check_control['sentence_length'])
-            # 对不符合长度的sentence进行处理，丢弃或部位 | 未进行
-
             # path = os.path.join(self.output_path, x_file_name)
-            # if self.setting_control['is_self_outdata']:
-            #     # x_path = os.path.join(self.output_path, str('x_'+x_file_name[:-3]+'npy'))  #存早了
-            #     # y_path = os.path.join(self.output_path, str('y_'+x_file_name[:-3]+'npy'))
-            #     # np.save(x_path, x_data)
-            #     # np.save(y_path, y_final)
-            #     pass
-            # else:
+            # if not self.setting_control['is_self_outdata']:
             #     with open(path, 'w', encoding='utf-8') as f:
             #         j = 0
             #         while j < len(x_data):
@@ -317,41 +348,35 @@ class DataProcess(object):
             #             j += 1
             x_sub.extend(x_final)
             y_sub.extend(y_final)
-            assert len(x_sub) == len(y_sub)
-
+        # 检查是否包含空元素，并删除
         if type(y_sub[0]) == list:
-            print('Attention: the y_final may have [[]] or [[[]]] data')
+            for i in y_sub:
+                if len(i) == 0:
+                    empty_index = y_sub.index(i)
+                    assert len(x_sub[empty_index]) == 0  # 保证x_sub对应的空与y_sub的空是相同的位置
+            x_sub = [x for x in x_sub if x != []]
+            y_sub = [y for y in y_sub if y != []]
+            assert len(x_sub) == len(y_sub)  # 如果x_sub对应的index集合是y_sub对应的超集,就会出问题
         else:
             tools.target_delete(y_sub)
             tools.target_delete(x_sub)
-
-        sentences_count = len(y_sub)
-        too_long_sentence = [i for i in list(map(len, y_sub)) if i > self.time_step]
-        print('the amount of the data[sentence] is %d' % sentences_count)
-        print('the rate of the too long sentence is %g, the number is %d'
-              % (len(too_long_sentence)/sentences_count, len(too_long_sentence)))
-        print(too_long_sentence)
-        # char_dictionary = self.__get_dictionary(x_sub)
-        # for item in char_dictionary.items():
-        #     print(item)
+        tools.check_too_long_sentence(y_sub, self.time_step, self.check_control['check_2long_sentence'])
+        # 将x映射为数字
+        char_dictionary = self.__get_dictionary(x_sub)
+        x_sub2 = []
+        for x_sentence in x_sub:
+            temp_sentence = []
+            for x_char in x_sentence:
+                temp_sentence.append(char_dictionary.get(x_char, 0))  # padding 和 UNK都填成0
+            x_sub2.append(temp_sentence)
+        # 将x_sub2和y_sub保存成按batch的npz
+        self.make_batch(x_sub2, y_sub)
         return None
-
-    def __get_dictionary(self, x_sub):
-        char_dictionary = {}
-        pre_dictionary = [('UNK', -1)]
-        total_chars = tools.flatten(x_sub)
-        # print('The real dictionary size=', len(Counter(total_chars)))
-        most_common_chars = Counter(total_chars).most_common(self.dictionary_size-1)
-        pre_dictionary.extend(most_common_chars)
-        print(pre_dictionary)
-        for char, _ in pre_dictionary:
-            char_dictionary[char] = len(char_dictionary)
-        return char_dictionary
 
 
 def main():
     my_data_process = DataProcess()
-    my_data_process.make_data()
+    my_data_process.make_train_data()
 
 
 if __name__ == '__main__':
