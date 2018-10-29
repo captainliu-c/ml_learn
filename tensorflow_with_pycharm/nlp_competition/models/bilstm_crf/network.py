@@ -2,20 +2,19 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.contrib.rnn import LSTMCell
 from tensorflow.contrib.crf import crf_log_likelihood
-from tensorflow.contrib.crf import viterbi_decode
 
 
 class Settings(object):
     def __init__(self):
         self.model_name = 'bi_lstm_crf'
-        self.embedding_size = 64
+        self.embedding_size = 100
         self.time_step = 150  # 句子应该多长
-        self.hidden_size = 64  # hidden size应该比输入的embedding size大吧
+        self.hidden_size = 100  # hidden size应该比输入的embedding size大吧
         self.layers_num = 2  # 增大的话，会多大程度影响性能
         self.n_classes = 31  # UNK标注成什么？还有不足time step进行补位的项目
         self.vocabulary_size = 3000
         self.weights_decay = 0.001  # 按照参数传进来
-        self.batch_size = 128
+        self.batch_size = 100
         self.ckpt_path = r'C:\Users\nhn\Documents\GitHub\ml_learn\tensorflow_with_pycharm\nlp_competition\ckpt\\'\
                          + self.model_name + '/'
         self.summary_path = ''
@@ -41,10 +40,11 @@ class BiLstmCRF(object):
         with tf.name_scope('Inputs'):
             self._x_inputs = tf.placeholder(tf.int64, [None, self.time_step], name='x_input')
             self._y_inputs = tf.placeholder(tf.int64, [None, self.time_step], name='y_input')
+            self.sequence_lengths = tf.placeholder(tf.int32, [None], name='sentence_lengths')
         with tf.variable_scope('embedding'):
-            self.embedding = tf.get_variable(shape=[self.vocabulary_size+1, self.embedding_size],
-                                             initializer=tf.random_uniform_initializer,
-                                             dtype=tf.float32, trainable=True, name='embedding')
+            self._embedding = tf.get_variable(shape=[self.vocabulary_size+1, self.embedding_size],
+                                              initializer=tf.random_uniform_initializer,
+                                              dtype=tf.float32, trainable=True, name='embedding')
         with tf.variable_scope('bi_lstm'):
             bi_lstm_output = self.inference(self.x_inputs)
             bi_lstm_output = tf.nn.dropout(bi_lstm_output, self._dropout_prob)
@@ -56,11 +56,11 @@ class BiLstmCRF(object):
             flatten_out = tf.matmul(flatten_input, weights)+biases
         with tf.name_scope('crf'):  # 没用variable_scope
             self.logits = tf.reshape(flatten_out, [-1, self.time_step, self.n_classes])
-            self.sequence_lengths = np.full(self.batch_size, self.time_step, dtype=np.int32)
+            # self.sequence_lengths = np.full(self.batch_size, self.time_step, dtype=np.int32)
             # 需要改data_process，把句子的真实长度保存到npz中，用length做索引
             log_likelihood, self.transition_params = crf_log_likelihood(
                 inputs=self.logits, tag_indices=self.y_inputs, sequence_lengths=self.sequence_lengths)
-            self.crf_loss = tf.reduce_mean(log_likelihood)
+            self.crf_loss = -tf.reduce_mean(log_likelihood)
             self.lost = self.crf_loss + tf.add_n(tf.get_collection('losses'))
         self.saver = tf.train.Saver(max_to_keep=2)
 
@@ -103,7 +103,7 @@ class BiLstmCRF(object):
         return var
 
     def inference(self, x_inputs):
-        inputs = tf.nn.embedding_lookup(self.embedding, x_inputs)
+        inputs = tf.nn.embedding_lookup(self._embedding, x_inputs)
         cell_fw = LSTMCell(self.hidden_size)
         cell_bw = LSTMCell(self.hidden_size)
         (outputs_fw, outputs_bw), _ = tf.nn.bidirectional_dynamic_rnn(

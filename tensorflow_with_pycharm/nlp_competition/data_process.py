@@ -10,21 +10,22 @@ from tqdm import tqdm
 class DataProcess(object):
     def __init__(self):
         self.__input_path = r'C:\Users\nhn\Desktop\data\train'
-        self.__output_path = r'C:\Users\nhn\Desktop\data\process_data\\'
+        self.__train_output_path = r'C:\Users\nhn\Desktop\data\process_data\train\\'
+        self.__valid_output_path = r'C:\Users\nhn\Desktop\data\process_data\validation\\'
         self.__file_types = ['TXT', 'ann']
-        self.__validation_percentage = 20
+        self.__validation_percentage = 0.15
         self.__test_percentage = 0
         self.__commas = ['。', ]  # ','
         self.__padding_comma = '#'
         self.__time_step = 150  # train set中超过这个数的比例是0.117835
         self.__dictionary_size = 3000  # real 3242, 经过根据句子长度截断处理后变为3147
-        self.__batch_size = 128
+        self.__batch_size = 100
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
                             'Method', 'Treatment', 'Operation', 'Anatomy', 'Level', 'Duration', 'SideEff']
         self.__setting_control = {'to_wrap_word': True, 'tag_is_int': True, 'is_self_outdata': True}
         self.__check_control = {'sentence_length': False, 'entity_and_rawdata': False, 'final_data': False,
-                                'check_2long_sentence': False}
+                                'check_2long_sentence': False, 'show_file_name': True}
         self.__tags = self.__create_tags(self.__tags_list)
         self.__y_files_path = self.__get_files(self.file_types[1])
 
@@ -40,15 +41,12 @@ class DataProcess(object):
             raise ValueError('the path must be a string')
 
     @property
-    def output_path(self):
-        return self.__output_path
+    def train_output_path(self):
+        return self.__train_output_path
 
-    @output_path.setter
-    def output_path(self, path):
-        if type(path) == 'str':  # 可以加一些其他的判断
-            self.__output_path = path
-        else:
-            raise ValueError('the path must be a string')
+    @property
+    def valid_output_path(self):
+        return self.__valid_output_path
 
     @property
     def file_types(self):
@@ -202,7 +200,8 @@ class DataProcess(object):
             for prefix in self.tags_prefixes:
                 keys.append(str(prefix+tag))
         if self.setting_control['tag_is_int']:
-            tags = dict(zip(keys, list(map(str, range(len(keys))))))
+            # tags = dict(zip(keys, list(map(str, range(len(keys))))))
+            tags = dict(zip(keys, list(range(len(keys)))))
         else:
             tags = dict(zip(keys, keys))
         return tags
@@ -232,19 +231,10 @@ class DataProcess(object):
     def __add_tags(self, sorted_y, x_file, entities_index):
         """判断是否是相同实体重复标注、判断是否是换行实体、对实体进行标注"""
         x_file = self.__file2char(x_file)
-        index = 1
-        count_skip = 0
+        y_with_tag = x_file[:]
         # 对实体进行标记
-        y_with_tag = self.__entity2tags(x_file, sorted_y[0])
-        while index < len(sorted_y):
-            pre_data = sorted_y[index-1]
-            data = sorted_y[index]
-            if data[2] == pre_data[2]:  # 确认是否是同一个index对应的两个实体
-                count_skip += 1
-            else:
-                y_with_tag = self.__entity2tags(y_with_tag, data)
-            index += 1
-        # print('--We have skip %d datas, because of the same index have two entities' % count_skip)
+        for y_data in sorted_y:
+            y_with_tag = self.__entity2tags(y_with_tag, y_data)
         # 对剩余内容进行标记
         for data in y_with_tag:
             current_index = y_with_tag.index(data)
@@ -266,17 +256,24 @@ class DataProcess(object):
                 char_dictionary[char] = len(char_dictionary)+1
         return char_dictionary
 
-    def make_batch(self, x_sub2, y_sub):
-        batch_num = 0
+    def make_batch(self, x_sub2, y_sub, sentence_lengths):
+        train_batch_num = 0
+        valid_batch_num = 0
         sample_num = len(x_sub2)
         for start in tqdm(range(0, sample_num, self.batch_size)):
-            batch_path = self.output_path + str(batch_num) + '.npz'
+            train_batch_path = self.train_output_path + str(train_batch_num) + '.npz'
+            valid_batch_path = self.valid_output_path + str(valid_batch_num) + '.npz'
             end = min(start+self.batch_size, sample_num)
             x_batch = x_sub2[start:end]
             y_batch = y_sub[start:end]
-            np.savez(batch_path, X=x_batch, y=y_batch)
-            batch_num += 1
-        print('Finish! Batch number is %d' % batch_num)
+            sentence_lengths_batch = sentence_lengths[start:end]
+            if np.random.rand() < self.validation_percentage:
+                np.savez(valid_batch_path, X=x_batch, y=y_batch, len=sentence_lengths_batch)
+                valid_batch_num += 1
+            else:
+                np.savez(train_batch_path, X=x_batch, y=y_batch, len=sentence_lengths_batch)
+                train_batch_num += 1
+        print('Finish! Train batch number is %d, validation batch number is %d' % (train_batch_num, valid_batch_num))
 
     def make_train_data(self):
         """
@@ -288,6 +285,7 @@ class DataProcess(object):
         4. 删除换行符[未删除]，并根据句号进行拆分句子
         """
         x_sub, y_sub = [], []
+        sentence_lengths = []
         for y_file_path in tqdm(self.y_files_path):
             y_final, x_final = [], []
             start_index = 0
@@ -308,58 +306,42 @@ class DataProcess(object):
             # 获得x data
             x_raw_data = [x for x in x_file]  # target_delete(x_raw_data, target='\n')
             assert len(y_with_tag) == len(x_raw_data)
-            # 筛分句子，并对句子进行处理
-            if self.setting_control['to_wrap_word']:
-                index = 0
-                while index < len(y_with_tag):  # 如果最后一个字符不是self.commas的话，最后一段data会少append进去
-                    y_data = y_with_tag[index]  # 但是似乎影响也不大
-                    x_data = x_raw_data[index]
-                    if y_data in self.commas:
-                        assert x_data == y_data
-                        if index - start_index < self.time_step:
-                            y_sentence = y_with_tag[start_index:index]
-                            x_sentence = x_raw_data[start_index:index]
-                            for _ in range(self.time_step-(index-start_index)):
-                                y_sentence.append(0)
-                                x_sentence.append(self.padding_comma)  # 仅仅是0.txt的话,就补了10089个,补的太多会不会有问题
-                            y_final.append(y_sentence)
-                            x_final.append(x_sentence)
-                        else:
-                            assert index >= start_index+self.time_step
-                            y_final.append(y_with_tag[start_index:start_index+self.time_step])
-                            x_final.append(x_raw_data[start_index:start_index+self.time_step])
-                        start_index = index+1
-                    index += 1
-            else:
-                y_final, x_final = y_with_tag, x_raw_data
 
+            # 拆分句子，并对句子进行处理
+            index = 0
+            while index < len(y_with_tag):  # 如果最后一个字符不是self.commas的话，最后一段data会少append进去
+                y_data = y_with_tag[index]  # 但是似乎影响也不大
+                x_data = x_raw_data[index]
+                if y_data in self.commas:
+                    assert x_data == y_data
+                    if index - start_index < self.time_step:
+                        y_sentence = y_with_tag[start_index:index]
+                        x_sentence = x_raw_data[start_index:index]
+                        for _ in range(self.time_step-(index-start_index)):
+                            y_sentence.append(0)
+                            x_sentence.append(self.padding_comma)  # 仅仅是0.txt的话,就补了10089个,补的太多会不会有问题
+                        y_final.append(y_sentence)
+                        x_final.append(x_sentence)
+                        sentence_lengths.append(index-start_index)
+                    else:
+                        assert index >= start_index+self.time_step
+                        y_final.append(y_with_tag[start_index:start_index+self.time_step])
+                        x_final.append(x_raw_data[start_index:start_index+self.time_step])
+                        sentence_lengths.append(self.time_step)
+                    start_index = index+1
+                index += 1
             tools.check_sentence_length(y_final, control=self.check_control['sentence_length'])
-            # path = os.path.join(self.output_path, x_file_name)
-            # if not self.setting_control['is_self_outdata']:
-            #     with open(path, 'w', encoding='utf-8') as f:
-            #         j = 0
-            #         while j < len(x_data):
-            #             if x_final[j] == self.commas[0]:  # 因为只是句号换行，所以不是in
-            #                 f.write(x_final[j] + ' O' + '\n' + '\n')
-            #             elif y_final[j] == self.tags['Other']:
-            #                 f.write(x_final[j] + ' O' + '\n')
-            #             else:
-            #                 f.write(x_final[j]+' '+y_final[j]+'\n')
-            #             j += 1
             x_sub.extend(x_final)
             y_sub.extend(y_final)
-        # 检查是否包含空元素，并删除
-        if type(y_sub[0]) == list:
-            for i in y_sub:
-                if len(i) == 0:
-                    empty_index = y_sub.index(i)
-                    assert len(x_sub[empty_index]) == 0  # 保证x_sub对应的空与y_sub的空是相同的位置
-            x_sub = [x for x in x_sub if x != []]
-            y_sub = [y for y in y_sub if y != []]
-            assert len(x_sub) == len(y_sub)  # 如果x_sub对应的index集合是y_sub对应的超集,就会出问题
-        else:
-            tools.target_delete(y_sub)
-            tools.target_delete(x_sub)
+
+        # 检查是否包含空元素，以及位置是否一一对应
+        for i in y_sub:
+            if len(i) == 0:
+                empty_index = y_sub.index(i)
+                assert len(x_sub[empty_index]) == 0  # 保证x_sub对应的空与y_sub的空是相同的位置
+        x_sub = [x for x in x_sub if x != []]
+        y_sub = [y for y in y_sub if y != []]
+        assert len(x_sub) == len(y_sub)  # 如果x_sub对应的index集合是y_sub对应的超集,就会出问题
         tools.check_too_long_sentence(y_sub, self.time_step, self.check_control['check_2long_sentence'])
         # 将x映射为数字
         char_dictionary = self.__get_dictionary(x_sub)
@@ -370,7 +352,7 @@ class DataProcess(object):
                 temp_sentence.append(char_dictionary.get(x_char, 0))  # padding 和 UNK都填成0
             x_sub2.append(temp_sentence)
         # 将x_sub2和y_sub保存成按batch的npz
-        self.make_batch(x_sub2, y_sub)
+        self.make_batch(x_sub2, y_sub, sentence_lengths)
         return None
 
 
