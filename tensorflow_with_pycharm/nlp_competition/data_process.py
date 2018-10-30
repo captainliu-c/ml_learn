@@ -9,9 +9,13 @@ from tqdm import tqdm
 
 class DataProcess(object):
     def __init__(self):
-        self.__input_path = r'C:\Users\nhn\Desktop\data\train'
-        self.__train_output_path = r'C:\Users\nhn\Desktop\data\process_data\train\\'
-        self.__valid_output_path = r'C:\Users\nhn\Desktop\data\process_data\validation\\'
+        self.__root_path = os.getcwd()
+        # self.__input_path = r'C:\Users\nhn\Desktop\data\train'
+        self.__input_path = self.__root_path + r'\data\raw_data\train\\'
+        # self.__train_output_path = r'C:\Users\nhn\Desktop\data\process_data\train\\'
+        # self.__valid_output_path = r'C:\Users\nhn\Desktop\data\process_data\validation\\'
+        self.__train_output_path = self.__root_path + r'\data\process_data\train\\'
+        self.__valid_output_path = self.__root_path + r'\data\process_data\validation\\'
         self.__file_types = ['TXT', 'ann']
         self.__validation_percentage = 0.15
         self.__test_percentage = 0
