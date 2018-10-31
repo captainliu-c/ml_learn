@@ -10,20 +10,20 @@ from tqdm import tqdm
 class DataProcess(object):
     def __init__(self):
         self.__root_path = os.getcwd()
-        # self.__input_path = r'C:\Users\nhn\Desktop\data\train'
         self.__input_path = self.__root_path + r'\data\raw_data\train\\'
-        # self.__train_output_path = r'C:\Users\nhn\Desktop\data\process_data\train\\'
-        # self.__valid_output_path = r'C:\Users\nhn\Desktop\data\process_data\validation\\'
+        self.__submit_input_path = self.__root_path + r'\data\raw_data\submit\\'
         self.__train_output_path = self.__root_path + r'\data\process_data\train\\'
         self.__valid_output_path = self.__root_path + r'\data\process_data\validation\\'
+        self.__submit_output_path = self.__root_path + r'\data\process_data\result\\'
         self.__file_types = ['TXT', 'ann']
-        self.__validation_percentage = 0.15
+        self.__validation_percentage = 0.20
         self.__test_percentage = 0
         self.__commas = ['。', ]  # ','
         self.__padding_comma = '#'
         self.__time_step = 150  # train set中超过这个数的比例是0.117835
         self.__dictionary_size = 3000  # real 3242, 经过根据句子长度截断处理后变为3147
         self.__batch_size = 100
+        self.__submit_batch_size = 211
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
                             'Method', 'Treatment', 'Operation', 'Anatomy', 'Level', 'Duration', 'SideEff']
@@ -31,7 +31,12 @@ class DataProcess(object):
         self.__check_control = {'sentence_length': False, 'entity_and_rawdata': False, 'final_data': False,
                                 'check_2long_sentence': False, 'show_file_name': True}
         self.__tags = self.__create_tags(self.__tags_list)
-        self.__y_files_path = self.__get_files(self.file_types[1])
+        self.__y_files_path = self.__get_files(self.file_types[1], self.input_path)
+        self.submit_files_path = self.__get_files(self.file_types[0], self.__submit_input_path)
+        self.file2batch_relationship = dict(zip(list(map(lambda x: re.split('\\\\', x)[-1], self.submit_files_path)),
+                                                range(len(self.submit_files_path))))
+        self.file2batch_relationship_reverse = dict(zip(self.file2batch_relationship.values(),
+                                                        self.file2batch_relationship.keys()))
 
     @property
     def input_path(self):
@@ -77,6 +82,10 @@ class DataProcess(object):
             raise ValueError('the value must be in (0, 100)')
         else:
             self.__test_percentage = value
+
+    @property
+    def submit_batch_size(self):
+        return self.__submit_batch_size
 
     @property
     def commas(self):
@@ -210,9 +219,9 @@ class DataProcess(object):
             tags = dict(zip(keys, keys))
         return tags
 
-    def __get_files(self, file_type):
+    def __get_files(self, file_type, file_path):
         assert file_type in self.file_types
-        file_glob = os.path.join(self.input_path, '*.'+file_type)
+        file_glob = os.path.join(file_path, '*.'+file_type)
         return glob.glob(file_glob)
 
     def __entity2tags(self, x_file, data):
@@ -260,7 +269,7 @@ class DataProcess(object):
                 char_dictionary[char] = len(char_dictionary)+1
         return char_dictionary
 
-    def make_batch(self, x_sub2, y_sub, sentence_lengths):
+    def _make_batch(self, x_sub2, y_sub, sentence_lengths):
         train_batch_num = 0
         valid_batch_num = 0
         sample_num = len(x_sub2)
@@ -279,7 +288,7 @@ class DataProcess(object):
                 train_batch_num += 1
         print('Finish! Train batch number is %d, validation batch number is %d' % (train_batch_num, valid_batch_num))
 
-    def make_train_data(self):
+    def make_data(self):
         """
         1. 对原始txt转化成list
         2. 对ann文件进行处理，获得有序的实体的index
@@ -356,13 +365,70 @@ class DataProcess(object):
                 temp_sentence.append(char_dictionary.get(x_char, 0))  # padding 和 UNK都填成0
             x_sub2.append(temp_sentence)
         # 将x_sub2和y_sub保存成按batch的npz
-        self.make_batch(x_sub2, y_sub, sentence_lengths)
+        self._make_batch(x_sub2, y_sub, sentence_lengths)
+        self._make_submit_data(char_dictionary)
         return None
+
+    def _make_submit_data(self, char_dictionary):  # char_dictionary
+        submit_final = []
+        submit_sentence_length = []
+        file_belong = []  # len=5064
+        result = []
+
+        for submit_file_path in tqdm(self.submit_files_path):
+            start_index, index = 0, 0
+            with open(submit_file_path, 'rb') as file:
+                file = file.read().decode('utf-8')
+            raw_data = [x for x in file]  # string to list
+            # 拆分句子
+            while index < len(raw_data):
+                data = raw_data[index]
+                if data in self.commas:
+                    sentence_length = index-start_index
+                    if sentence_length < self.time_step:
+                        sentence = raw_data[start_index:index]
+                        for _ in range(self.time_step - sentence_length):
+                            sentence.append(self.padding_comma)  # 仅仅是0.txt的话,就补了10089个,补的太多会不会有问题
+                        submit_final.append(sentence)
+                        submit_sentence_length.append(index - start_index)
+                        # file_belong.append(self.file2batch_relationship[re.split('\\\\', submit_file_path)[-1]])
+                    else:
+                        assert index >= start_index + self.time_step
+                        submit_final.append(raw_data[start_index:start_index + self.time_step])
+                        submit_sentence_length.append(self.time_step)
+                    file_belong.append(self.file2batch_relationship[re.split('\\\\', submit_file_path)[-1]])
+                    start_index = index + 1
+                index += 1
+            if (start_index < index) and len(raw_data[start_index:]) != 1:
+                # print('see:', ''.join(raw_data[start_index:]))
+                pass  # 最后一行数据没有处理, 看了下除了第一个，其他的两项没用
+        # 检查空元素
+        for sentence in submit_final:
+            if len(sentence) == 0:
+                raise ValueError('there is empty sentence in data')
+        # 映射为数字
+        for sentence in submit_final:
+            temp_sentence = []
+            for submit_char in sentence:
+                temp_sentence.append(char_dictionary.get(submit_char, 0))  # padding 和 UNK都填成0
+            result.append(temp_sentence)
+        # make batch, batch size = 211
+        sample_num = len(result)
+        batch_num = 0
+        for start in range(0, sample_num, self.submit_batch_size):
+            submit_batch_path = self.__submit_output_path + str(batch_num) + '.npz'
+            end = min(start+self.submit_batch_size, sample_num)
+            submit_batch = result[start:end]
+            sentence_length_batch = submit_sentence_length[start:end]
+            submit_file_belong = file_belong[start:end]
+            np.savez(submit_batch_path, X=submit_batch, len=sentence_length_batch, belong=submit_file_belong)
+            batch_num += 1
+        print('submit batch is done')
 
 
 def main():
     my_data_process = DataProcess()
-    my_data_process.make_train_data()
+    my_data_process.make_data()
 
 
 if __name__ == '__main__':

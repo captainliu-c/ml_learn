@@ -16,10 +16,18 @@ class Settings(object):
         self.n_classes = 31
         self.vocabulary_size = 3000
         self.weights_decay = 0.001  # 后期再改，目前是高偏差，还没到overfit那一步
-        self.train_and_validation_size = 100
+        self.__batch_size = 100
         self.root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../..")))
         self.ckpt_path = self.root_path + r'\ckpt\\' + self.model_name + '\\'
         self.summary_path = self.root_path + r'\summary\\' + self.model_name + '\\'
+
+    @property
+    def batch_size(self):
+        return self.__batch_size
+
+    @batch_size.setter
+    def batch_size(self, value):
+        self.__batch_size = value
 
 
 class BiLstmCRF(object):
@@ -34,17 +42,17 @@ class BiLstmCRF(object):
         self.n_classes = settings.n_classes
         self.vocabulary_size = settings.vocabulary_size
         self._weights_decay = settings.weights_decay
-        self._batch_size = settings.train_and_validation_size
+        # self._batch_size = settings.batch_size
         self._global_steps = tf.Variable(0, trainable=False, name='Global_Step')
-        self.accuracy = tf.Variable(0, trainable=False, name='middleware_accuracy')
 
         self._dropout_prob = tf.placeholder(tf.float32, [])
         # input placeholder
         with tf.name_scope('Inputs'):
             # self._batch_size = tf.placeholder(tf.int32, [None], name='batch_size')
             self._sentence_lengths = tf.placeholder(tf.int32, [None], name='sentence_lengths')
-            self._x_inputs = tf.placeholder(tf.int32, [self.batch_size, self.time_step], name='x_input')
-            self._y_inputs = tf.placeholder(tf.int32, [self.batch_size, self.time_step], name='y_input')
+            self._x_inputs = tf.placeholder(tf.int32, [None, self.time_step], name='x_input')
+            self._y_inputs = tf.placeholder(tf.int32, [None, self.time_step], name='y_input')
+            self._batch_size = tf.placeholder(tf.int32, [], name='batch_size')
         with tf.variable_scope('embedding'):
             self._embedding = tf.get_variable(shape=[self.vocabulary_size+1, self.embedding_size],
                                               initializer=tf.random_uniform_initializer,
