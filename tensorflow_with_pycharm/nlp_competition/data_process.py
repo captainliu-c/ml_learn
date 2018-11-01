@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 class DataProcess(object):
     def __init__(self):
-        self.__root_path = os.getcwd()
+        self.__root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../..")))
         self.__input_path = self.__root_path + r'\data\raw_data\train\\'
         self.__submit_input_path = self.__root_path + r'\data\raw_data\submit\\'
         self.__train_output_path = self.__root_path + r'\data\process_data\train\\'
@@ -35,8 +35,20 @@ class DataProcess(object):
         self.submit_files_path = self.__get_files(self.file_types[0], self.__submit_input_path)
         self.file2batch_relationship = dict(zip(list(map(lambda x: re.split('\\\\', x)[-1], self.submit_files_path)),
                                                 range(len(self.submit_files_path))))
-        self.file2batch_relationship_reverse = dict(zip(self.file2batch_relationship.values(),
-                                                        self.file2batch_relationship.keys()))
+        self.__file2batch_relationship_reverse = dict(zip(self.file2batch_relationship.values(),
+                                                          self.file2batch_relationship.keys()))
+
+    @property
+    def root_path(self):
+        return self.__root_path
+
+    @root_path.setter
+    def root_path(self, value):
+        self.__root_path = value
+
+    @property
+    def submit_input_path(self):
+        return self.__submit_input_path
 
     @property
     def input_path(self):
@@ -126,6 +138,13 @@ class DataProcess(object):
     @property
     def time_step(self):
         return self.__time_step
+
+    @property
+    def file2batch_relationship_reverse(self):
+        return self.__file2batch_relationship_reverse
+
+    # @file2batch_relationship_reverse.getter
+    # pass
 
     @staticmethod
     def __file2char(file):
@@ -293,7 +312,7 @@ class DataProcess(object):
         1. 对原始txt转化成list
         2. 对ann文件进行处理，获得有序的实体的index
         2.1 实体的index有存在于两行的问题
-        2.2 实体的index有在相同的index，存在两个实体的问题:跳过处理,不跳过也行
+        2.2 实体的index有在相同的index，存在两个实体的问题:不跳过
         3. 首先标记实体，接着标记other
         4. 删除换行符[未删除]，并根据句号进行拆分句子
         """
@@ -428,6 +447,7 @@ class DataProcess(object):
 
 def main():
     my_data_process = DataProcess()
+    my_data_process.root_path = os.getcwd()
     my_data_process.make_data()
 
 
