@@ -9,10 +9,9 @@ from tools import flatten
 flags = tf.flags
 flags.DEFINE_float('lr', 1e-3, 'initial learning rate, default: 1e-3')
 flags.DEFINE_float('decay_rate', 0.60, 'lr decay rate, default: 0.65')
-flags.DEFINE_integer('decay_step', 207, 'decay_step, default: 180')
-flags.DEFINE_integer('valid_step', 140, 'valid_step, default: 10000')  # 132=(220*6)/10
+flags.DEFINE_integer('decay_step', 204, 'decay_step, default: 180')
+flags.DEFINE_integer('valid_step', 130, 'valid_step, default: 10000')  # 132=(220*6)/10
 flags.DEFINE_integer('max_epoch', 8, 'all training epochs, default: 6')
-# flags.DEFINE_float('last_f1', 0.40, 'if valid_f1 > last_f1, save new model. default: 0.40')
 flags.DEFINE_float('last_accuracy', 0.90, 'if valid_accuracy > last_accuracy, save new model. default: 0.90')
 flags.DEFINE_bool('submit_control', True, 'if True, the train.py will use cpk to predict submit data')
 
@@ -22,6 +21,7 @@ DATA_TRAIN_PATH = ROOT_PATH + r'\data\process_data\train\\'
 DATA_VALID_PATH = ROOT_PATH + r'\data\process_data\validation\\'
 DATA_SUBMIT_PATH = ROOT_PATH + r'\data\process_data\result\\'
 DATA_SUBMIT_OUT_PATH = ROOT_PATH + r'\data\process_data\submit\\'
+SUBMIT_BATCH_SIZE = 129
 
 TR_BATCHES = os.listdir(DATA_TRAIN_PATH)  # 会变吗 写在函数里
 VA_BATCHES = os.listdir(DATA_VALID_PATH)
@@ -113,41 +113,65 @@ def main():
 
         if SUBMIT_CONTROL:
             _data_process = DataProcess()
-            total_predict, total_belong = [], []
+            total_predict, total_belong, is_commas_total = [], [], []
             file2batch_relationship_reverse = _data_process.file2batch_relationship_reverse
+            # print(file2batch_relationship_reverse[38])
+
             entity_tag = _data_process.tags
             begin_tag_index = [x for x in list(entity_tag.values())[1:] if (x+1) % 2 == 0]
 
-            # 输入：x_batch、sentence_length， 获得预测结果 model.predict_sentence
-            for batch_id in tqdm(range(24)):
+            # 获得batch的预测结果
+            for batch_id in tqdm(range(len(os.listdir(DATA_SUBMIT_PATH)))):  # 24=batch数量
                 submit_data = np.load(DATA_SUBMIT_PATH + str(batch_id) + '.npz')
-                submit_x, submit_length, submit_belong = submit_data['X'], submit_data['len'], submit_data['belong']
+                submit_x, submit_length, submit_belong, is_comma = \
+                    submit_data['X'], submit_data['len'], submit_data['belong'], submit_data['comma']
                 feed_dict = {model.x_inputs: submit_x, model.sentence_lengths: submit_length,
-                             model.batch_size: 211, model.dropout_prob: NOT_TRAIN_DROPOUT}
+                             model.batch_size: SUBMIT_BATCH_SIZE, model.dropout_prob: NOT_TRAIN_DROPOUT}
                 _predict = sess.run(model.predict_sentence, feed_dict=feed_dict)
-                batch_index = 0
-                while batch_index < len(_predict):
-                    sentence, sentence_length = _predict[batch_index], submit_length[batch_index]
-                    total_predict.append(sentence[:sentence_length])  # 恢复为真实长度
-                    batch_index += 1
+                # 恢复sentence为真实长度
+                for pred_sentence in _predict:
+                    __index = 0
+                    len_sentence = list(submit_length)[__index]  # predict和length在源数据中必须一一对应
+                    total_predict.append(pred_sentence[:len_sentence])
+                    __index += 1
+                is_commas_total.extend(is_comma)
                 total_belong.extend(submit_belong)
+
+            # for i in submit_length:
+            #     print(i)
+
             # 添加句号，恢复原始index
-            _files, files = [], []  # 索引即是ID
-            start_index = 0
-            for file_id in range(59):  # 还原成真实文件对应的句子数量
-                file_size = total_belong.count(file_id)
-                _files.append(total_predict[start_index:start_index+file_size])
-                start_index = start_index+file_size
-            for file in _files:  # 添加句号，处理成二维数组
+            files = []  # 索引即是ID
+            global_index = 0
+            for file_id in range(59):  # 50=submit原文件数量
+                file_size = total_belong.count(file_id)  # 确认有多少行sentence
+                # print('file id: %d file size: %d' % (file_id, file_size))
+                _file = total_predict[global_index:global_index+file_size]  # 切片出当前的_file
+
                 sentence_index = 1
-                flatten_article = list(file[0])
-                while sentence_index < len(file):
-                    flatten_article.extend('。')
-                    flatten_article.extend(file[sentence_index])
+                flatten_article = list(_file[0])  # 将file拍成一维，并且处理句号
+                while sentence_index < file_size:
+                    if is_commas_total[global_index+sentence_index] == 1:
+                        flatten_article.extend('。')
+                        flatten_article.extend(_file[sentence_index])
+                    else:
+                        flatten_article.extend(_file[sentence_index])
                     sentence_index += 1
+                global_index += file_size
                 files.append(flatten_article)
-            print(len(files[0]))
-            # 检查文件[127——1.txt]长度不一致的问题，原文件3017，恢复后2169多
+            print('length:', len(files[0]))
+            #     _files.append(total_predict[start_index:start_index+file_size])
+            #     is_commas_file.append(is_commas_total[start_index:start_index+file_size])
+            #     start_index = start_index+file_size
+            # for file in _files:  # 添加句号，处理成二维数组
+            #     sentence_index = 1
+            #     flatten_article = list(file[0])
+            #     while sentence_index < len(file):
+            #         flatten_article.extend('。')
+            #         flatten_article.extend(file[sentence_index])
+            #         sentence_index += 1
+            #     files.append(flatten_article)
+            # 检查文件[127——1.txt]长度不一致的问题，原文件3017，恢复后2169多 | 是因为raw_data会对超过150的进行截断
 
             # for file in files:
             #     # 获得文件名

@@ -9,7 +9,10 @@ from tqdm import tqdm
 
 class DataProcess(object):
     def __init__(self):
-        self.__root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../..")))
+        if __name__ == '__main__':
+            self.__root_path = os.getcwd()
+        else:
+            self.__root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../..")))
         self.__input_path = self.__root_path + r'\data\raw_data\train\\'
         self.__submit_input_path = self.__root_path + r'\data\raw_data\submit\\'
         self.__train_output_path = self.__root_path + r'\data\process_data\train\\'
@@ -23,7 +26,7 @@ class DataProcess(object):
         self.__time_step = 150  # train set中超过这个数的比例是0.117835
         self.__dictionary_size = 3000  # real 3242, 经过根据句子长度截断处理后变为3147
         self.__batch_size = 100
-        self.__submit_batch_size = 211
+        self.__submit_batch_size = 129
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
                             'Method', 'Treatment', 'Operation', 'Anatomy', 'Level', 'Duration', 'SideEff']
@@ -41,10 +44,6 @@ class DataProcess(object):
     @property
     def root_path(self):
         return self.__root_path
-
-    @root_path.setter
-    def root_path(self, value):
-        self.__root_path = value
 
     @property
     def submit_input_path(self):
@@ -393,16 +392,19 @@ class DataProcess(object):
         submit_sentence_length = []
         file_belong = []  # len=5064
         result = []
+        is_comma = []
 
         for submit_file_path in tqdm(self.submit_files_path):
-            start_index, index = 0, 0
+            # print('begin to process the file: %s' % re.split('\\\\', submit_file_path)[-1])
             with open(submit_file_path, 'rb') as file:
                 file = file.read().decode('utf-8')
             raw_data = [x for x in file]  # string to list
             # 拆分句子
+            start_index, index = 0, 0
             while index < len(raw_data):
                 data = raw_data[index]
                 if data in self.commas:
+                    # print('i find the commas in the index: %d' % index)
                     sentence_length = index-start_index
                     if sentence_length < self.time_step:
                         sentence = raw_data[start_index:index]
@@ -410,17 +412,32 @@ class DataProcess(object):
                             sentence.append(self.padding_comma)  # 仅仅是0.txt的话,就补了10089个,补的太多会不会有问题
                         submit_final.append(sentence)
                         submit_sentence_length.append(index - start_index)
-                        # file_belong.append(self.file2batch_relationship[re.split('\\\\', submit_file_path)[-1]])
+                        is_comma.append(1)
+                        file_belong.append(self.file2batch_relationship[re.split('\\\\', submit_file_path)[-1]])
                     else:
-                        assert index >= start_index + self.time_step
-                        submit_final.append(raw_data[start_index:start_index + self.time_step])
-                        submit_sentence_length.append(self.time_step)
-                    file_belong.append(self.file2batch_relationship[re.split('\\\\', submit_file_path)[-1]])
+                        # 对长度超过150的句子进行重复截取，最终不足的再padding
+                        remain_length = sentence_length
+                        while remain_length > 0:
+                            end_index = min(start_index+self.time_step, index)
+                            if remain_length > self.time_step:
+                                padding_count = 0
+                            else:
+                                padding_count = self.time_step-remain_length
+                            _sentence = raw_data[start_index:end_index]
+                            _sentence.extend([self.padding_comma for _ in range(padding_count)])
+                            submit_final.append(_sentence)  # append data
+                            submit_sentence_length.append(self.time_step - padding_count)  # append length
+                            is_comma.append(int(padding_count > 0))  # append is_comma tag
+                            file_belong.append(self.file2batch_relationship[re.split('\\\\', submit_file_path)[-1]])
+                            remain_length -= self.time_step
+                            start_index += self.time_step-padding_count
                     start_index = index + 1
+
                 index += 1
             if (start_index < index) and len(raw_data[start_index:]) != 1:
                 # print('see:', ''.join(raw_data[start_index:]))
                 pass  # 最后一行数据没有处理, 看了下除了第一个，其他的两项没用
+            # tools.check_sentence_wrap_and_padding(submit_final, submit_sentence_length, is_comma)
         # 检查空元素
         for sentence in submit_final:
             if len(sentence) == 0:
@@ -431,23 +448,30 @@ class DataProcess(object):
             for submit_char in sentence:
                 temp_sentence.append(char_dictionary.get(submit_char, 0))  # padding 和 UNK都填成0
             result.append(temp_sentence)
-        # make batch, batch size = 211
+        # make batch
         sample_num = len(result)
+        print('the sample num is: ', sample_num)
         batch_num = 0
         for start in range(0, sample_num, self.submit_batch_size):
             submit_batch_path = self.__submit_output_path + str(batch_num) + '.npz'
             end = min(start+self.submit_batch_size, sample_num)
+
             submit_batch = result[start:end]
             sentence_length_batch = submit_sentence_length[start:end]
             submit_file_belong = file_belong[start:end]
-            np.savez(submit_batch_path, X=submit_batch, len=sentence_length_batch, belong=submit_file_belong)
+            is_comma_batch = is_comma[start:end]
+
+            np.savez(submit_batch_path,
+                     X=submit_batch, len=sentence_length_batch, belong=submit_file_belong, comma=is_comma_batch)
             batch_num += 1
         print('submit batch is done')
+
+    def my_test(self):
+        self._make_submit_data(char_dictionary={})
 
 
 def main():
     my_data_process = DataProcess()
-    my_data_process.root_path = os.getcwd()
     my_data_process.make_data()
 
 

@@ -70,3 +70,12 @@ def check_too_long_sentence(y_sub, time_step, control=False):
         print('the rate of the too long sentence is %g, the number is %d'
               % (len(too_long_sentence) / sentences_count, len(too_long_sentence)))
         print(too_long_sentence)
+
+
+def check_sentence_wrap_and_padding(submit_final, submit_sentence_length, is_comma):
+    t_index = 0
+    while t_index < len(submit_final):
+        print('\nthe data is: ', submit_final[t_index])
+        print('the real length is %d, and the is_comma is %d' % (submit_sentence_length[t_index], is_comma[t_index]))
+        print('the padding length is %d' % len(submit_final[t_index]))
+        t_index += 1
