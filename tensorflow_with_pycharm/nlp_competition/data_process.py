@@ -142,9 +142,6 @@ class DataProcess(object):
     def file2batch_relationship_reverse(self):
         return self.__file2batch_relationship_reverse
 
-    # @file2batch_relationship_reverse.getter
-    # pass
-
     @staticmethod
     def __file2char(file):
         result = []
@@ -209,8 +206,6 @@ class DataProcess(object):
             begin_index, end_index = data[2], data[3]
             if len(data) > 5:  # 带换行的实体  ['T341', 'Test', 6560, 6561, 6562, 6563, '体重']
                 raw_x_file = str(''.join(x_file[begin_index:end_index]) + ' ' + ''.join(x_file[data[4]:data[5]]))
-                # raw_x_file只考虑了一个;出现的情况，所以在检查多个的时候会出问题
-                # 123_8.TXT的T219和41.TXT的T223存在这个情况，但是标注的时候是按照多个;来标注的
                 temp = re.findall('[A-Z]_[A-Z][a-z]+', raw_x_file)
                 if len(temp) != data[5] - begin_index:
                     if data[-1] != raw_x_file:
@@ -230,11 +225,7 @@ class DataProcess(object):
         for tag in tags_list:
             for prefix in self.tags_prefixes:
                 keys.append(str(prefix+tag))
-        if self.setting_control['tag_is_int']:
-            # tags = dict(zip(keys, list(map(str, range(len(keys))))))
-            tags = dict(zip(keys, list(range(len(keys)))))
-        else:
-            tags = dict(zip(keys, keys))
+        tags = dict(zip(keys, list(range(len(keys)))))
         return tags
 
     def __get_files(self, file_type, file_path):
@@ -395,7 +386,7 @@ class DataProcess(object):
         is_comma = []
 
         for submit_file_path in tqdm(self.submit_files_path):
-            # print('begin to process the file: %s' % re.split('\\\\', submit_file_path)[-1])
+            print('begin to process the file: %s' % re.split('\\\\', submit_file_path)[-1])
             with open(submit_file_path, 'rb') as file:
                 file = file.read().decode('utf-8')
             raw_data = [x for x in file]  # string to list
@@ -408,8 +399,8 @@ class DataProcess(object):
                     sentence_length = index-start_index
                     if sentence_length < self.time_step:
                         sentence = raw_data[start_index:index]
-                        for _ in range(self.time_step - sentence_length):
-                            sentence.append(self.padding_comma)  # 仅仅是0.txt的话,就补了10089个,补的太多会不会有问题
+                        sentence.extend([self.padding_comma for _ in range(self.time_step-sentence_length)])
+
                         submit_final.append(sentence)
                         submit_sentence_length.append(index - start_index)
                         is_comma.append(1)
@@ -425,18 +416,19 @@ class DataProcess(object):
                                 padding_count = self.time_step-remain_length
                             _sentence = raw_data[start_index:end_index]
                             _sentence.extend([self.padding_comma for _ in range(padding_count)])
+
                             submit_final.append(_sentence)  # append data
                             submit_sentence_length.append(self.time_step - padding_count)  # append length
                             is_comma.append(int(padding_count > 0))  # append is_comma tag
                             file_belong.append(self.file2batch_relationship[re.split('\\\\', submit_file_path)[-1]])
+
                             remain_length -= self.time_step
                             start_index += self.time_step-padding_count
                     start_index = index + 1
-
                 index += 1
+            # 确认是否有最后一段数据。看了下目前的数据有3个文档拥有最后一项，由于内容无意义，所以未处理
             if (start_index < index) and len(raw_data[start_index:]) != 1:
-                # print('see:', ''.join(raw_data[start_index:]))
-                pass  # 最后一行数据没有处理, 看了下除了第一个，其他的两项没用
+                print('see:', ''.join(raw_data[start_index:]))
             # tools.check_sentence_wrap_and_padding(submit_final, submit_sentence_length, is_comma)
         # 检查空元素
         for sentence in submit_final:
@@ -449,8 +441,7 @@ class DataProcess(object):
                 temp_sentence.append(char_dictionary.get(submit_char, 0))  # padding 和 UNK都填成0
             result.append(temp_sentence)
         # make batch
-        sample_num = len(result)
-        print('the sample num is: ', sample_num)
+        sample_num = len(result)  # print('the sample num is: ', sample_num)
         batch_num = 0
         for start in range(0, sample_num, self.submit_batch_size):
             submit_batch_path = self.__submit_output_path + str(batch_num) + '.npz'

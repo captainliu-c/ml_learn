@@ -79,3 +79,21 @@ def check_sentence_wrap_and_padding(submit_final, submit_sentence_length, is_com
         print('the real length is %d, and the is_comma is %d' % (submit_sentence_length[t_index], is_comma[t_index]))
         print('the padding length is %d' % len(submit_final[t_index]))
         t_index += 1
+
+
+def check_from_rawdata2file(raw_data_name, local_path, file):
+    comma = ['。']
+    raw_data_path = local_path+raw_data_name
+    with open(raw_data_path, 'rb') as f:
+        _data = f.read().decode('utf-8')
+    raw_data = [x for x in _data]
+    index = 0
+    print('the file name is:', raw_data_name)
+    while index < len(raw_data):
+        data = raw_data[index]
+        if data in comma:
+            if data != file[index]:
+                print('i found a different, the index is %d' % index)
+            else:
+                print('Same! The data is %s, and the index is %d' % (str(data), index))
+        index += 1
