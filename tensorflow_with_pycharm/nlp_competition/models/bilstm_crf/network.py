@@ -1,38 +1,30 @@
 import tensorflow as tf
 import numpy as np
 import os
-from tensorflow.contrib.rnn import LSTMCell
+# from tensorflow.contrib.rnn import LSTMCell
 from tensorflow.contrib.crf import crf_log_likelihood
 from tensorflow.contrib.crf import crf_decode
+from tensorflow.contrib import rnn
 
 
 class Settings(object):
     def __init__(self):
         self.model_name = 'bi_lstm_crf'
-        self.embedding_size = 300  # 我看有一个git代码size达到300
+        self.embedding_size = 300  # 即使500的话，效果也不好
         self.time_step = 150
-        self.hidden_size = 300  # 我看有一个git代码size达到300
-        self.layers_num = 2  # 暂时是一层
+        self.hidden_size = 300  # 即使500的话，效果也不好
+        self.layers_num = 1
         self.n_classes = 31
         self.vocabulary_size = 3000
         self.weights_decay = 0.001  # 后期再改，目前是高偏差，还没到overfit那一步
-        self.__batch_size = 100
         self.root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../..")))
         self.ckpt_path = self.root_path + r'\ckpt\\' + self.model_name + '\\'
         self.summary_path = self.root_path + r'\summary\\' + self.model_name + '\\'
 
-    @property
-    def batch_size(self):
-        return self.__batch_size
-
-    @batch_size.setter
-    def batch_size(self, value):
-        self.__batch_size = value
-
 
 class BiLstmCRF(object):
     """
-    bi_lstm[+dropout] ->flatten->crf
+    bi_lstm[+dropout] ->flatten[hidden_size*2, hidden_size]->tanh->flatten[hidden_size, n_classes]->crf
     """
     def __init__(self, settings):
         self.embedding_size = settings.embedding_size
@@ -42,13 +34,11 @@ class BiLstmCRF(object):
         self.n_classes = settings.n_classes
         self.vocabulary_size = settings.vocabulary_size
         self._weights_decay = settings.weights_decay
-        # self._batch_size = settings.batch_size
         self._global_steps = tf.Variable(0, trainable=False, name='Global_Step')
 
         self._dropout_prob = tf.placeholder(tf.float32, [])
         # input placeholder
         with tf.name_scope('Inputs'):
-            # self._batch_size = tf.placeholder(tf.int32, [None], name='batch_size')
             self._sentence_lengths = tf.placeholder(tf.int32, [None], name='sentence_lengths')
             self._x_inputs = tf.placeholder(tf.int32, [None, self.time_step], name='x_input')
             self._y_inputs = tf.placeholder(tf.int32, [None, self.time_step], name='y_input')
@@ -61,14 +51,20 @@ class BiLstmCRF(object):
         with tf.variable_scope('bi_lstm'):
             bi_lstm_output = self.inference(self.x_inputs)
             bi_lstm_output = tf.nn.dropout(bi_lstm_output, self._dropout_prob)
-        with tf.variable_scope('flatten'):
+        with tf.variable_scope('flatten_middle'):
             flatten_input = tf.reshape(bi_lstm_output, [-1, self.hidden_size * 2])
-            weights = self._variable_with_weight_decay('weights', [self.hidden_size*2, self.n_classes],
+            weights = self._variable_with_weight_decay('weights_middle', [self.hidden_size*2, self.hidden_size],
                                                        0.1, self.weights_decay)
-            tf.summary.histogram('weights', weights)
-            biases = self._variable_on_cpu('biases', [self.n_classes], tf.constant_initializer(0.1))
-            tf.summary.histogram('biases', biases)
-            flatten_out = tf.matmul(flatten_input, weights)+biases
+            tf.summary.histogram('weights_middle', weights)
+            biases = self._variable_on_cpu('biases_middle', [self.hidden_size], tf.constant_initializer(0.1))
+            tf.summary.histogram('biases_middle', biases)
+            _flatten_middle = tf.matmul(flatten_input, weights)+biases
+            flatten_middle = tf.tanh(_flatten_middle)
+        with tf.variable_scope('flatten_out'):
+            weights = self._variable_with_weight_decay('weights_out', [self.hidden_size, self.n_classes],
+                                                       0.1, self.weights_decay)
+            biases = self._variable_on_cpu('biases_out', [self.n_classes], tf.constant_initializer(0.1))
+            flatten_out = tf.nn.xw_plus_b(flatten_middle, weights, biases)
         with tf.name_scope('crf'):  # 没用variable_scope
             self.logits = tf.reshape(flatten_out, [-1, self.time_step, self.n_classes])
             log_likelihood, self.transition_params = crf_log_likelihood(
@@ -127,11 +123,22 @@ class BiLstmCRF(object):
         return var
 
     def inference(self, x_inputs):
-        inputs = tf.nn.embedding_lookup(self._embedding, x_inputs)
-        cell_fw = LSTMCell(self.hidden_size)
-        cell_bw = LSTMCell(self.hidden_size)
+        _inputs = tf.nn.embedding_lookup(self._embedding, x_inputs)
+        inputs = tf.nn.dropout(_inputs, self._dropout_prob)
+        hidden_size = self.hidden_size
+
+        def _cell(_hidden_size):  # no dropout
+            basic_cell = rnn.BasicLSTMCell(num_units=_hidden_size, name='basic_cell')
+            return basic_cell
+
+        fw_mulit_lstm = rnn.MultiRNNCell([_cell(hidden_size) for _ in range(self.layers_num)])
+        bw_mulit_lstm = rnn.MultiRNNCell([_cell(hidden_size) for _ in range(self.layers_num)])
         (outputs_fw, outputs_bw), _ = tf.nn.bidirectional_dynamic_rnn(
-            cell_fw=cell_fw, cell_bw=cell_bw, inputs=inputs, dtype=tf.float32)
+            cell_fw=fw_mulit_lstm, cell_bw=bw_mulit_lstm, inputs=inputs, dtype=tf.float32)
+
+        # cell_fw = LSTMCell(self.hidden_size)
+        # cell_bw = LSTMCell(self.hidden_size)
+
         outputs = tf.concat([outputs_fw, outputs_bw], axis=-1)
         return outputs
 

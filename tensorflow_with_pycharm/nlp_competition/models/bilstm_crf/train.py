@@ -8,12 +8,12 @@ from data_process import DataProcess
 
 flags = tf.flags
 flags.DEFINE_float('lr', 1e-3, 'initial learning rate, default: 1e-3')
-flags.DEFINE_float('decay_rate', 0.60, 'lr decay rate, default: 0.65')
+flags.DEFINE_float('decay_rate', 0.55, 'lr decay rate, default: 0.65')
 flags.DEFINE_integer('decay_step', 204, 'decay_step, default: 180')
 flags.DEFINE_integer('valid_step', 130, 'valid_step, default: 10000')  # 132=(220*6)/10
-flags.DEFINE_integer('max_epoch', 8, 'all training epochs, default: 6')
+flags.DEFINE_integer('max_epoch', 20, 'all training epochs, default: 6')
 flags.DEFINE_float('last_accuracy', 0.90, 'if valid_accuracy > last_accuracy, save new model. default: 0.90')
-flags.DEFINE_bool('submit_control', True, 'if True, the train.py will use cpk to predict submit data')
+flags.DEFINE_bool('submit_control', False, 'if True, the train.py will use cpk to predict submit data')
 
 SETTINGS = network.Settings()
 ROOT_PATH = SETTINGS.root_path
@@ -23,7 +23,7 @@ DATA_SUBMIT_PATH = ROOT_PATH + r'\data\process_data\result\\'
 DATA_SUBMIT_OUT_PATH = ROOT_PATH + r'\data\process_data\submit\\'
 SUBMIT_BATCH_SIZE = 129
 
-TR_BATCHES = os.listdir(DATA_TRAIN_PATH)  # 会变吗 写在函数里
+TR_BATCHES = os.listdir(DATA_TRAIN_PATH)
 VA_BATCHES = os.listdir(DATA_VALID_PATH)
 N_TR_BATCHES = len(TR_BATCHES)
 N_VA_BATCHES = len(VA_BATCHES)
@@ -104,8 +104,8 @@ def main():
         if os.path.exists(SETTINGS.ckpt_path + 'checkpoint'):
             print('Restoring Variables from Checkpoint...')
             model.saver.restore(sess, tf.train.latest_checkpoint(SETTINGS.ckpt_path))
-            # mean_accuracy = valid_epoch(DATA_TRAIN_PATH, model, sess)
-            # print('valid mean accuracy is %g' % mean_accuracy)
+            mean_accuracy = valid_epoch(DATA_TRAIN_PATH, model, sess)
+            print('valid mean accuracy is %g' % mean_accuracy)
             sess.run(tf.variables_initializer(training_ops))
         else:
             print('Initializing Variables...')
@@ -173,6 +173,7 @@ def main():
                     if word in begin_tag_index and (next_word == word+1):
                         # print('i have found the beginning of the entity')
                         entity_begin_index = file_index
+                        entity_head = file[entity_begin_index]
                         if entity_begin_index == length-1:  # entity开头是最后一位
                             print('i have found the entity with no body shows the last one at the file')
                             break
@@ -180,19 +181,26 @@ def main():
                         entity_index = entity_begin_index + 1
                         if entity_index == length-1:  # 在文档末尾这种形式 [entity_head] + [entity_body]
                             entity_end_index = entity_index
+                            print('i have found 在文档末尾这种形式 [entity_head] + [entity_body]')
                         else:
                             while entity_index < length-1:
+                                # print(entity_index)
                                 entity_body, next_entity_body = file[entity_index], file[entity_index+1]
-                                if entity_body != 0 and next_entity_body != 0:
-                                    entity_index = min(entity_index+1, length-1)  # length不减1的话, 会不会越界
-                                    entity_end_index = entity_index
+                                if entity_body != entity_head+1:
+                                    if entity_body == 0 and next_entity_body == entity_head+1:
+                                        entity_index = min(entity_index + 1, length - 1)
+                                        entity_end_index = entity_index
+                                    else:
+                                        entity_end_index = entity_index
+                                        file_index = entity_end_index-1
+                                        break
                                 else:
+                                    entity_index = min(entity_index + 1, length - 1)
                                     entity_end_index = entity_index
-                                    file_index = entity_end_index-1  # 末尾file_index+1
-                                    break
-                        # print('the begin and end index of the entity are: %d | %d'
-                        #       % (entity_begin_index, entity_end_index))
-                        # 获得实体类别
+                        # if 0 in file[entity_begin_index:entity_end_index]:
+                        # print('see:', file[entity_begin_index:entity_end_index])
+
+                        # # 获得实体类别
                         entity_type = entity_tag.get(file[entity_begin_index], 'wrong')
                         if entity_type == 'wrong':
                             raise ValueError('could not find the key:', file[entity_begin_index])
