@@ -5,6 +5,7 @@ import os
 from tensorflow.contrib.crf import crf_log_likelihood
 from tensorflow.contrib.crf import crf_decode
 from tensorflow.contrib import rnn
+from tensorflow.contrib.layers.python.layers import initializers
 
 
 class Settings(object):
@@ -35,6 +36,7 @@ class BiLstmCRF(object):
         self.vocabulary_size = settings.vocabulary_size
         self._weights_decay = settings.weights_decay
         self._global_steps = tf.Variable(0, trainable=False, name='Global_Step')
+        self.initializer = initializers.xavier_initializer()
 
         self._dropout_prob = tf.placeholder(tf.float32, [])
         # input placeholder
@@ -45,7 +47,7 @@ class BiLstmCRF(object):
             self._batch_size = tf.placeholder(tf.int32, [], name='batch_size')
         with tf.variable_scope('embedding'):
             self._embedding = tf.get_variable(shape=[self.vocabulary_size+1, self.embedding_size],
-                                              initializer=tf.random_uniform_initializer,
+                                              initializer=self.initializer,
                                               dtype=tf.float32, trainable=True, name='embedding')
 
         with tf.variable_scope('bi_lstm'):
@@ -54,7 +56,7 @@ class BiLstmCRF(object):
         with tf.variable_scope('flatten_middle'):
             flatten_input = tf.reshape(bi_lstm_output, [-1, self.hidden_size * 2])
             weights = self._variable_with_weight_decay('weights_middle', [self.hidden_size*2, self.hidden_size],
-                                                       0.1, self.weights_decay)
+                                                       self.weights_decay)
             tf.summary.histogram('weights_middle', weights)
             biases = self._variable_on_cpu('biases_middle', [self.hidden_size], tf.constant_initializer(0.1))
             tf.summary.histogram('biases_middle', biases)
@@ -62,14 +64,22 @@ class BiLstmCRF(object):
             flatten_middle = tf.tanh(_flatten_middle)
         with tf.variable_scope('flatten_out'):
             weights = self._variable_with_weight_decay('weights_out', [self.hidden_size, self.n_classes],
-                                                       0.1, self.weights_decay)
+                                                       self.weights_decay)
+            tf.summary.histogram('weights_out', weights)
             biases = self._variable_on_cpu('biases_out', [self.n_classes], tf.constant_initializer(0.1))
+            tf.summary.histogram('biases_out', biases)
             flatten_out = tf.nn.xw_plus_b(flatten_middle, weights, biases)
         with tf.name_scope('crf'):  # 没用variable_scope
             self.logits = tf.reshape(flatten_out, [-1, self.time_step, self.n_classes])
+            self.transition_params = tf.get_variable('transitions',
+                                                     shape=[self.n_classes, self.n_classes],
+                                                     initializer=self.initializer)
+
             log_likelihood, self.transition_params = crf_log_likelihood(
-                inputs=self.logits, tag_indices=self.y_inputs, sequence_lengths=self.sentence_lengths)
+                inputs=self.logits, tag_indices=self.y_inputs,
+                transition_params=self.transition_params, sequence_lengths=self.sentence_lengths)
             self._crf_loss = -tf.reduce_mean(log_likelihood)
+            tf.summary.scalar('crf_lost', self._crf_loss)
             self.lost = self._crf_loss + tf.add_n(tf.get_collection('losses'))
             tf.summary.scalar('lost', self.lost)
 
@@ -78,6 +88,8 @@ class BiLstmCRF(object):
                 self.logits, self.transition_params, self.sentence_lengths)
             self._correct_predict = tf.equal(self.predict_sentence, self.y_inputs)
             self.accuracy = tf.reduce_mean(tf.cast(self._correct_predict, 'float'))
+            tf.summary.scalar('accuracy', self.accuracy)
+            # self.conf_matrix = tf.confusion_matrix(self.y_inputs, self.predict_sentence, num_classes=self.n_classes)
         self.saver = tf.train.Saver(max_to_keep=2)
 
     @property
@@ -114,8 +126,8 @@ class BiLstmCRF(object):
             var = tf.get_variable(name, shape, initializer=initializer)
         return var
 
-    def _variable_with_weight_decay(self, name, shape, stddev, wb):
-        var = self._variable_on_cpu(name, shape, tf.truncated_normal_initializer(stddev=stddev))
+    def _variable_with_weight_decay(self, name, shape, wb):  # stddv
+        var = self._variable_on_cpu(name, shape, self.initializer)
 
         if wb:
             weight_decay = tf.multiply(tf.nn.l2_loss(var), wb)
@@ -124,20 +136,29 @@ class BiLstmCRF(object):
 
     def inference(self, x_inputs):
         _inputs = tf.nn.embedding_lookup(self._embedding, x_inputs)
-        inputs = tf.nn.dropout(_inputs, self._dropout_prob)
+        inputs = tf.nn.dropout(_inputs, 1.0)  # self._dropout_prob
         hidden_size = self.hidden_size
 
-        def _cell(_hidden_size):  # no dropout
-            basic_cell = rnn.BasicLSTMCell(num_units=_hidden_size, name='basic_cell')
-            return basic_cell
+        # def _cell(_hidden_size):  # no dropout
+        #     basic_cell = rnn.BasicLSTMCell(num_units=_hidden_size, name='basic_cell')
+        #     return basic_cell
+        #
+        # fw_mulit_lstm = rnn.MultiRNNCell([_cell(hidden_size) for _ in range(self.layers_num)])
+        # bw_mulit_lstm = rnn.MultiRNNCell([_cell(hidden_size) for _ in range(self.layers_num)])
 
-        fw_mulit_lstm = rnn.MultiRNNCell([_cell(hidden_size) for _ in range(self.layers_num)])
-        bw_mulit_lstm = rnn.MultiRNNCell([_cell(hidden_size) for _ in range(self.layers_num)])
+        lstm_cell = {}
+        for direction in ['forward', 'backward']:
+            with tf.variable_scope(direction):
+                lstm_cell[direction] = rnn.CoupledInputForgetGateLSTMCell(
+                    hidden_size,
+                    use_peepholes=True,
+                    initializer=self.initializer,
+                    state_is_tuple=True
+                )
+
         (outputs_fw, outputs_bw), _ = tf.nn.bidirectional_dynamic_rnn(
-            cell_fw=fw_mulit_lstm, cell_bw=bw_mulit_lstm, inputs=inputs, dtype=tf.float32)
-
-        # cell_fw = LSTMCell(self.hidden_size)
-        # cell_bw = LSTMCell(self.hidden_size)
+            cell_fw=lstm_cell['forward'], cell_bw=lstm_cell['backward'], inputs=inputs,
+            sequence_length=self.sentence_lengths, dtype=tf.float32)
 
         outputs = tf.concat([outputs_fw, outputs_bw], axis=-1)
         return outputs

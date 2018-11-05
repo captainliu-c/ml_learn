@@ -7,13 +7,15 @@ from data_process import DataProcess
 # import tools
 
 flags = tf.flags
-flags.DEFINE_float('lr', 1e-3, 'initial learning rate, default: 1e-3')
-flags.DEFINE_float('decay_rate', 0.55, 'lr decay rate, default: 0.65')
-flags.DEFINE_integer('decay_step', 204, 'decay_step, default: 180')
-flags.DEFINE_integer('valid_step', 130, 'valid_step, default: 10000')  # 132=(220*6)/10
-flags.DEFINE_integer('max_epoch', 20, 'all training epochs, default: 6')
-flags.DEFINE_float('last_accuracy', 0.90, 'if valid_accuracy > last_accuracy, save new model. default: 0.90')
+flags.DEFINE_float('decay_rate', 0.65, 'lr decay rate, default: 0.65')
+flags.DEFINE_integer('max_epoch', 15, 'all training epochs, default: 6')
 flags.DEFINE_bool('submit_control', False, 'if True, the train.py will use cpk to predict submit data')
+
+flags.DEFINE_float('clip', 5, 'Gradient clip')
+flags.DEFINE_float('lr', 1e-3, 'initial learning rate, default: 1e-3')
+flags.DEFINE_integer('decay_step', 55, 'decay_step, default: 204')
+flags.DEFINE_integer('valid_step', 50, 'valid_step, default: 10000')  # 132=(220*6)/10
+flags.DEFINE_float('last_accuracy', 0.90, 'if valid_accuracy > last_accuracy, save new model. default: 0.90')
 
 SETTINGS = network.Settings()
 ROOT_PATH = SETTINGS.root_path
@@ -21,7 +23,9 @@ DATA_TRAIN_PATH = ROOT_PATH + r'\data\process_data\train\\'
 DATA_VALID_PATH = ROOT_PATH + r'\data\process_data\validation\\'
 DATA_SUBMIT_PATH = ROOT_PATH + r'\data\process_data\result\\'
 DATA_SUBMIT_OUT_PATH = ROOT_PATH + r'\data\process_data\submit\\'
+TRAIN_BATCH_SIZE = 400
 SUBMIT_BATCH_SIZE = 129
+
 
 TR_BATCHES = os.listdir(DATA_TRAIN_PATH)
 VA_BATCHES = os.listdir(DATA_VALID_PATH)
@@ -37,6 +41,7 @@ LAST_ACCURACY = FLAGS.last_accuracy
 MODEL_PATH = SETTINGS.ckpt_path + 'model.ckpt'
 SUMMARY_PATH = SETTINGS.summary_path
 SUBMIT_CONTROL = FLAGS.submit_control
+CLIP = FLAGS.clip
 
 
 def get_batch(data_path, data_id):
@@ -48,8 +53,9 @@ def valid_epoch(path, model, sess):
     _accuracy_list = list()
     for batch_id in range(N_VA_BATCHES):
         x_batch, y_batch, sentence_length = get_batch(path, batch_id)  # fetches = [model.accuracy]
-        feed_dict = {model.x_inputs: x_batch, model.y_inputs: y_batch, model.batch_size: 100,
+        feed_dict = {model.x_inputs: x_batch, model.y_inputs: y_batch, model.batch_size: TRAIN_BATCH_SIZE,
                      model.sentence_lengths: sentence_length, model.dropout_prob: NOT_TRAIN_DROPOUT}
+        # _fetches = [model.accuracy, ]  # [model.accuracy, model.conf_matrix]
         accuracy = sess.run(model.accuracy, feed_dict)
         _accuracy_list.append(accuracy)
     mean_accuracy = sess.run(tf.reduce_mean(_accuracy_list))
@@ -73,11 +79,11 @@ def train_epoch(path, model, sess, train_fetches, valid_fetches, train_writer, t
         random_batch = np.random.permutation(N_TR_BATCHES)
         batch = random_batch[batch]
         x_data, y_data, sentence_lengths = get_batch(DATA_TRAIN_PATH, batch)
-        feed_dict = {model.x_inputs: x_data, model.y_inputs: y_data, model.batch_size: 100,
+        feed_dict = {model.x_inputs: x_data, model.y_inputs: y_data, model.batch_size: TRAIN_BATCH_SIZE,
                      model.dropout_prob: TRAIN_DROPOUT, model.sentence_lengths: sentence_lengths}
         summary, _ = sess.run(train_fetches, feed_dict)
 
-        if (global_steps+1) % 20 == 0:
+        if (global_steps+1) % 5 == 0:
             train_writer.add_summary(summary, global_steps)
             summary, lost = sess.run(valid_fetches, feed_dict)
             test_writer.add_summary(summary, global_steps)
@@ -89,13 +95,19 @@ def main():
         device_count={'CPU': 4},
         intra_op_parallelism_threads=4,
         inter_op_parallelism_threads=4)
+    config.gpu_options.allow_growth = True
 
     with tf.Session(config=config) as sess:
         model = network.BiLstmCRF(SETTINGS)
         with tf.variable_scope('training_op') as vs:
             learning_rate = tf.train.exponential_decay(LEARNING_RATE, model.global_steps,
                                                        DECAY_STEP, LR_DECAY_RATE, staircase=True)
-            train_op = tf.train.AdamOptimizer(learning_rate).minimize(model.lost, model.global_steps)
+
+            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+            grads_and_vars = optimizer.compute_gradients(model.lost)
+            grads_and_vars_clips = [[tf.clip_by_value(g, -CLIP, CLIP), v] for g, v in grads_and_vars]
+            train_op = optimizer.apply_gradients(grads_and_vars_clips, global_step=model.global_steps)
+
             merged = tf.summary.merge_all()
             train_writer = tf.summary.FileWriter(SUMMARY_PATH + 'train', sess.graph)
             test_writer = tf.summary.FileWriter(SUMMARY_PATH + 'test')

@@ -25,7 +25,7 @@ class DataProcess(object):
         self.__padding_comma = '#'
         self.__time_step = 150  # train set中超过这个数的比例是0.117835
         self.__dictionary_size = 3000  # real 3242, 经过根据句子长度截断处理后变为3147
-        self.__batch_size = 100
+        self.__batch_size = 400
         self.__submit_batch_size = 129
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
@@ -457,13 +457,33 @@ class DataProcess(object):
             batch_num += 1
         print('submit batch is done')
 
+    def check_data_classes(self):
+        count_by_classes = [0 for _ in range(len(self.__tags_list))]
+        for y_file_path in self.y_files_path:
+            with open(y_file_path, 'rb') as f:
+                f = f.read().decode('utf-8')
+            file = re.split('\n', f)
+            _len = len(file)
+            tools.target_delete(file)
+            assert len(file) == _len-1
+            for _data in file:
+                data = re.split('\s', _data, maxsplit=2)[1]
+                count_by_classes[self.__tags_list.index(data)] += 1
+
+        total_count = sum(count_by_classes)
+        rate = [x/total_count for x in count_by_classes]
+        tags_index = 0
+        while tags_index < len(self.__tags_list):
+            print(self.__tags_list[tags_index], ':%.3f' % rate[tags_index], '| count:', count_by_classes[tags_index])
+            tags_index += 1
+
     def my_test(self):
         self._make_submit_data(char_dictionary={})
 
 
 def main():
     my_data_process = DataProcess()
-    my_data_process.make_data()
+    my_data_process.check_data_classes()
 
 
 if __name__ == '__main__':
