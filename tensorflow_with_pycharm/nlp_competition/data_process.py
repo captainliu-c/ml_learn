@@ -25,7 +25,7 @@ class DataProcess(object):
         self.__padding_comma = '#'
         self.__time_step = 150  # train set中超过这个数的比例是0.117835
         self.__dictionary_size = 3000  # real 3242, 经过根据句子长度截断处理后变为3147
-        self.__batch_size = 400
+        self.__batch_size = 200
         self.__submit_batch_size = 129
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
@@ -278,7 +278,7 @@ class DataProcess(object):
                 char_dictionary[char] = len(char_dictionary)+1
         return char_dictionary
 
-    def _make_batch(self, x_sub2, y_sub, sentence_lengths):
+    def _make_batch(self, x_sub2, y_sub, sentence_lengths, x_with_inword_tag):
         train_batch_num = 0
         valid_batch_num = 0
         sample_num = len(x_sub2)
@@ -289,13 +289,35 @@ class DataProcess(object):
             x_batch = x_sub2[start:end]
             y_batch = y_sub[start:end]
             sentence_lengths_batch = sentence_lengths[start:end]
+            with_inword_tag = x_with_inword_tag[start:end]
             if np.random.rand() < self.validation_percentage:
-                np.savez(valid_batch_path, X=x_batch, y=y_batch, len=sentence_lengths_batch)
+                np.savez(valid_batch_path, X=x_batch, y=y_batch, len=sentence_lengths_batch, inword=with_inword_tag)
                 valid_batch_num += 1
             else:
-                np.savez(train_batch_path, X=x_batch, y=y_batch, len=sentence_lengths_batch)
+                np.savez(train_batch_path, X=x_batch, y=y_batch, len=sentence_lengths_batch, inword=with_inword_tag)
                 train_batch_num += 1
         print('Finish! Train batch number is %d, validation batch number is %d' % (train_batch_num, valid_batch_num))
+
+    def check_data_classes(self):
+        count_by_classes = [0 for _ in range(len(self.__tags_list))]
+        for y_file_path in self.y_files_path:
+            with open(y_file_path, 'rb') as f:
+                f = f.read().decode('utf-8')
+            file = re.split('\n', f)
+            _len = len(file)
+            tools.target_delete(file)
+            assert len(file) == _len-1
+            for _data in file:
+                data = re.split('\s', _data, maxsplit=2)[1]
+                count_by_classes[self.__tags_list.index(data)] += 1
+
+        total_count = sum(count_by_classes)
+        print('total count is:', total_count)
+        rate = [x/total_count for x in count_by_classes]
+        tags_index = 0
+        while tags_index < len(self.__tags_list):
+            print(self.__tags_list[tags_index], ': %.3f' % rate[tags_index], '| count: ', count_by_classes[tags_index])
+            tags_index += 1
 
     def make_data(self):
         """
@@ -306,55 +328,64 @@ class DataProcess(object):
         3. 首先标记实体，接着标记other
         4. 删除换行符[未删除]，并根据句号进行拆分句子
         """
-        x_sub, y_sub = [], []
-        sentence_lengths = []
-        for y_file_path in tqdm(self.y_files_path):
-            y_final, x_final = [], []
-            start_index = 0
-            x_file_path = re.sub('%s' % self.file_types[1], '%s' % self.file_types[0], y_file_path)
-            x_file_name = re.split('\\\\', x_file_path)[-1]
-            if True in self.check_control.values():
-                print('-The file is[%s]' % x_file_name)
-            with open(y_file_path, 'rb') as y_file:
-                y_datas = y_file.read().decode('utf-8')
-            with open(x_file_path, 'rb') as x_file:
-                x_file = x_file.read().decode('utf-8')
+        middle_path = self.root_path + r'/middle/'
+        if not os.path.exists(middle_path+'x_sub.npy'):
+            x_sub, y_sub = [], []
+            sentence_lengths = []
+            for y_file_path in tqdm(self.y_files_path):
+                y_final, x_final = [], []
+                start_index = 0
+                x_file_path = re.sub('%s' % self.file_types[1], '%s' % self.file_types[0], y_file_path)
+                x_file_name = re.split('\\\\', x_file_path)[-1]
+                if True in self.check_control.values():
+                    print('-The file is[%s]' % x_file_name)
+                with open(y_file_path, 'rb') as y_file:
+                    y_datas = y_file.read().decode('utf-8')
+                with open(x_file_path, 'rb') as x_file:
+                    x_file = x_file.read().decode('utf-8')
 
-            # 获得一些基本数据：sorted_y、entities_index
-            sorted_y = self.__sort_y(y_datas)
-            entities_index = self.__collect_entities_index(sorted_y)
-            # 获得y_with_tag，
-            y_with_tag = self.__add_tags(sorted_y, x_file, entities_index)  # target_delete(y_with_tag, target='\n')
-            # 获得x data
-            x_raw_data = [x for x in x_file]  # target_delete(x_raw_data, target='\n')
-            assert len(y_with_tag) == len(x_raw_data)
+                # 获得一些基本数据：sorted_y、entities_index
+                sorted_y = self.__sort_y(y_datas)
+                entities_index = self.__collect_entities_index(sorted_y)
+                # 获得y_with_tag，
+                y_with_tag = self.__add_tags(sorted_y, x_file, entities_index)  # target_delete(y_with_tag, target='\n')
+                # 获得x data
+                x_raw_data = [x for x in x_file]  # target_delete(x_raw_data, target='\n')
+                assert len(y_with_tag) == len(x_raw_data)
 
-            # 拆分句子，并对句子进行处理
-            index = 0
-            while index < len(y_with_tag):  # 如果最后一个字符不是self.commas的话，最后一段data会少append进去
-                y_data = y_with_tag[index]  # 但是似乎影响也不大
-                x_data = x_raw_data[index]
-                if y_data in self.commas:
-                    assert x_data == y_data
-                    if index - start_index < self.time_step:
-                        y_sentence = y_with_tag[start_index:index]
-                        x_sentence = x_raw_data[start_index:index]
-                        for _ in range(self.time_step-(index-start_index)):
-                            y_sentence.append(0)
-                            x_sentence.append(self.padding_comma)  # 仅仅是0.txt的话,就补了10089个,补的太多会不会有问题
-                        y_final.append(y_sentence)
-                        x_final.append(x_sentence)
-                        sentence_lengths.append(index-start_index)
-                    else:
-                        assert index >= start_index+self.time_step
-                        y_final.append(y_with_tag[start_index:start_index+self.time_step])
-                        x_final.append(x_raw_data[start_index:start_index+self.time_step])
-                        sentence_lengths.append(self.time_step)
-                    start_index = index+1
-                index += 1
-            tools.check_sentence_length(y_final, control=self.check_control['sentence_length'])
-            x_sub.extend(x_final)
-            y_sub.extend(y_final)
+                # 拆分句子，并对句子进行处理
+                index = 0
+                while index < len(y_with_tag):  # 如果最后一个字符不是self.commas的话，最后一段data会少append进去
+                    y_data = y_with_tag[index]  # 但是似乎影响也不大
+                    x_data = x_raw_data[index]
+                    if y_data in self.commas:
+                        assert x_data == y_data
+                        if index - start_index < self.time_step:
+                            y_sentence = y_with_tag[start_index:index]
+                            x_sentence = x_raw_data[start_index:index]
+                            for _ in range(self.time_step-(index-start_index)):
+                                y_sentence.append(0)
+                                x_sentence.append(self.padding_comma)  # 仅仅是0.txt的话,就补了10089个,补的太多会不会有问题
+                            y_final.append(y_sentence)
+                            x_final.append(x_sentence)
+                            sentence_lengths.append(index-start_index)
+                        else:
+                            assert index >= start_index+self.time_step
+                            y_final.append(y_with_tag[start_index:start_index+self.time_step])
+                            x_final.append(x_raw_data[start_index:start_index+self.time_step])
+                            sentence_lengths.append(self.time_step)
+                        start_index = index+1
+                    index += 1
+                tools.check_sentence_length(y_final, control=self.check_control['sentence_length'])
+                x_sub.extend(x_final)
+                y_sub.extend(y_final)
+            np.save(middle_path+'x_sub.npy', x_sub)
+            np.save(middle_path+'y_sub.npy', y_sub)
+            np.save(middle_path+'sentence_lengths.npy', sentence_lengths)
+        else:
+            x_sub = np.load(middle_path+'x_sub.npy')
+            y_sub = np.load(middle_path+'y_sub.npy')
+            sentence_lengths = np.load(middle_path+'sentence_lengths.npy')
 
         # 检查是否包含空元素，以及位置是否一一对应
         for i in y_sub:
@@ -373,8 +404,10 @@ class DataProcess(object):
             for x_char in x_sentence:
                 temp_sentence.append(char_dictionary.get(x_char, 0))  # padding 和 UNK都填成0
             x_sub2.append(temp_sentence)
+        # 获得x的词位置标记
+        x_with_inword_tag = tools.add_in_word_index(x_sub)
         # 将x_sub2和y_sub保存成按batch的npz
-        self._make_batch(x_sub2, y_sub, sentence_lengths)
+        self._make_batch(x_sub2, y_sub, sentence_lengths, x_with_inword_tag)
         self._make_submit_data(char_dictionary)
         return None
 
@@ -440,6 +473,8 @@ class DataProcess(object):
             for submit_char in sentence:
                 temp_sentence.append(char_dictionary.get(submit_char, 0))  # padding 和 UNK都填成0
             result.append(temp_sentence)
+        # 获得in word index tag
+        submit_with_inword_tag = tools.add_in_word_index(submit_final)
         # make batch
         sample_num = len(result)  # print('the sample num is: ', sample_num)
         batch_num = 0
@@ -451,31 +486,13 @@ class DataProcess(object):
             sentence_length_batch = submit_sentence_length[start:end]
             submit_file_belong = file_belong[start:end]
             is_comma_batch = is_comma[start:end]
+            _with_inword_tag = submit_with_inword_tag[start:end]
 
             np.savez(submit_batch_path,
-                     X=submit_batch, len=sentence_length_batch, belong=submit_file_belong, comma=is_comma_batch)
+                     X=submit_batch, len=sentence_length_batch, belong=submit_file_belong,
+                     comma=is_comma_batch, inword=_with_inword_tag)
             batch_num += 1
         print('submit batch is done')
-
-    def check_data_classes(self):
-        count_by_classes = [0 for _ in range(len(self.__tags_list))]
-        for y_file_path in self.y_files_path:
-            with open(y_file_path, 'rb') as f:
-                f = f.read().decode('utf-8')
-            file = re.split('\n', f)
-            _len = len(file)
-            tools.target_delete(file)
-            assert len(file) == _len-1
-            for _data in file:
-                data = re.split('\s', _data, maxsplit=2)[1]
-                count_by_classes[self.__tags_list.index(data)] += 1
-
-        total_count = sum(count_by_classes)
-        rate = [x/total_count for x in count_by_classes]
-        tags_index = 0
-        while tags_index < len(self.__tags_list):
-            print(self.__tags_list[tags_index], ':%.3f' % rate[tags_index], '| count:', count_by_classes[tags_index])
-            tags_index += 1
 
     def my_test(self):
         self._make_submit_data(char_dictionary={})
@@ -483,7 +500,7 @@ class DataProcess(object):
 
 def main():
     my_data_process = DataProcess()
-    my_data_process.check_data_classes()
+    my_data_process.make_data()
 
 
 if __name__ == '__main__':

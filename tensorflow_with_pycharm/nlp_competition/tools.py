@@ -1,4 +1,5 @@
 import numpy as np
+import jieba
 from collections import Iterable
 
 
@@ -97,3 +98,34 @@ def check_from_rawdata2file(raw_data_name, local_path, file):
             else:
                 print('Same! The data is %s, and the index is %d' % (str(data), index))
         index += 1
+
+
+def add_in_word_index(sentences):
+    """
+    0:single
+    1:begin
+    2:in
+    3:end
+    """
+    sentences_with_tag = []
+    for sentence in sentences:
+        _cut = list(jieba.cut(''.join(sentence)))
+        _sentence = []
+        for word in _cut:
+            if len(word) == 1:
+                _sentence.append(0)
+            else:
+                with_tag = [2]*len(word)
+                with_tag[0] = 1
+                with_tag[-1] = 3
+                _sentence.extend(with_tag)
+        sentences_with_tag.append(_sentence)
+    return sentences_with_tag
+
+
+def main():
+    pass
+
+
+if __name__ == '__main__':
+    print(list(jieba.cut('我是大白菜')))
