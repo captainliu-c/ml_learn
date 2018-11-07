@@ -1,20 +1,19 @@
 import tensorflow as tf
 import numpy as np
-from tqdm import tqdm
-import os
 import network
+import os
+from tqdm import tqdm
 from data_process import DataProcess
-# import tools
 
 flags = tf.flags
 flags.DEFINE_float('decay_rate', 0.60, 'lr decay rate, default: 0.65')
-flags.DEFINE_integer('max_epoch', 15, 'all training epochs, default: 6')
+flags.DEFINE_integer('max_epoch', 20, 'all training epochs, default: 6')
 flags.DEFINE_bool('submit_control', False, 'if True, the train.py will use cpk to predict submit data')
 
 flags.DEFINE_float('clip', 5, 'Gradient clip')
 flags.DEFINE_float('lr', 1e-3, 'initial learning rate, default: 1e-3')
-flags.DEFINE_integer('decay_step', 102, 'decay_step, default: 204')
-flags.DEFINE_integer('valid_step', 100, 'valid_step, default: 10000')  # 132=(220*6)/10
+flags.DEFINE_integer('decay_step', 145, 'decay_step, default: 204')
+flags.DEFINE_integer('valid_step', 150, 'valid_step, default: 10000')  # 132=(220*6)/10
 flags.DEFINE_float('last_accuracy', 0.90, 'if valid_accuracy > last_accuracy, save new model. default: 0.90')
 
 SETTINGS = network.Settings()
@@ -23,30 +22,35 @@ DATA_TRAIN_PATH = ROOT_PATH + r'\data\process_data\train\\'
 DATA_VALID_PATH = ROOT_PATH + r'\data\process_data\validation\\'
 DATA_SUBMIT_PATH = ROOT_PATH + r'\data\process_data\result\\'
 DATA_SUBMIT_OUT_PATH = ROOT_PATH + r'\data\process_data\submit\\'
-TRAIN_BATCH_SIZE = 200
-SUBMIT_BATCH_SIZE = 129
+MODEL_PATH = SETTINGS.ckpt_path + 'model.ckpt'
+SUMMARY_PATH = SETTINGS.summary_path
+TRAIN_DROPOUT, NOT_TRAIN_DROPOUT = 0.5, 1.0
+TRAIN_BATCH_SIZE, SUBMIT_BATCH_SIZE = 200, 129
 
+TR_BATCHES, VA_BATCHES, SUB_BATCHES = os.listdir(DATA_TRAIN_PATH),\
+                                      os.listdir(DATA_VALID_PATH),\
+                                      os.listdir(DATA_SUBMIT_PATH)
+N_TR_BATCHES, N_VA_BATCHES, N_SUB_BATCHES = len(TR_BATCHES), len(VA_BATCHES), len(SUB_BATCHES)
 
-TR_BATCHES = os.listdir(DATA_TRAIN_PATH)
-VA_BATCHES = os.listdir(DATA_VALID_PATH)
-N_TR_BATCHES = len(TR_BATCHES)
-N_VA_BATCHES = len(VA_BATCHES)
 FLAGS = flags.FLAGS
 LEARNING_RATE = FLAGS.lr
 LR_DECAY_RATE = FLAGS.decay_rate
 DECAY_STEP = FLAGS.decay_step
-TRAIN_DROPOUT = 0.5
-NOT_TRAIN_DROPOUT = 1.0
 LAST_ACCURACY = FLAGS.last_accuracy
-MODEL_PATH = SETTINGS.ckpt_path + 'model.ckpt'
-SUMMARY_PATH = SETTINGS.summary_path
 SUBMIT_CONTROL = FLAGS.submit_control
 CLIP = FLAGS.clip
 
 
 def get_batch(data_path, data_id):
     data = np.load(data_path+str(data_id)+'.npz')
-    return data['X'], data['y'], data['len'], data['inword']
+    if not SUBMIT_CONTROL:
+        return data['X'], data['y'], data['len'], data['inword']
+    else:
+        return data['X'], data['len'], data['belong'], data['comma'], data['inword']
+
+
+def get_feed_dict():
+    pass
 
 
 def valid_epoch(path, model, sess):
@@ -67,6 +71,7 @@ def train_epoch(path, model, sess, train_fetches, valid_fetches, train_writer, t
     global LEARNING_RATE
     global LAST_ACCURACY
 
+    random_batch = np.random.permutation(N_TR_BATCHES)
     for batch in tqdm(range(N_TR_BATCHES)):
         global_steps = sess.run(model.global_steps)
         if (global_steps+1) % FLAGS.valid_step == 0:
@@ -77,9 +82,9 @@ def train_epoch(path, model, sess, train_fetches, valid_fetches, train_writer, t
                 print('saved new model to %s ' % saving_path)
             print('the step is %d and the validation mean accuracy is %g' % (global_steps + 1, mean_accuracy))
 
-        random_batch = np.random.permutation(N_TR_BATCHES)
-        batch = random_batch[batch]
-        x_data, y_data, sentence_lengths, inword = get_batch(DATA_TRAIN_PATH, batch)
+        # random_batch = np.random.permutation(N_TR_BATCHES)
+        batch_id = random_batch[batch]
+        x_data, y_data, sentence_lengths, inword = get_batch(DATA_TRAIN_PATH, batch_id)
         feed_dict = {model.x_inputs: x_data, model.y_inputs: y_data, model.batch_size: TRAIN_BATCH_SIZE,
                      model.dropout_prob: TRAIN_DROPOUT, model.sentence_lengths: sentence_lengths,
                      model.seq_inputs: inword}
@@ -138,11 +143,9 @@ def main():
                 files = list(np.load(middle_files_path))
             else:
                 # 获得batch的预测结果
-                for batch_id in tqdm(range(len(os.listdir(DATA_SUBMIT_PATH)))):  # 24=batch数量
-                    submit_data = np.load(DATA_SUBMIT_PATH + str(batch_id) + '.npz')
+                for batch_id in tqdm(range(N_SUB_BATCHES)):  # 24=batch数量
                     submit_x, submit_length, submit_belong, is_comma, submit_inword = \
-                        submit_data['X'], submit_data['len'], submit_data['belong'],\
-                        submit_data['comma'], submit_data['inword']
+                        get_batch(DATA_SUBMIT_PATH, batch_id)
                     feed_dict = {model.x_inputs: submit_x, model.sentence_lengths: submit_length,
                                  model.batch_size: SUBMIT_BATCH_SIZE, model.dropout_prob: NOT_TRAIN_DROPOUT,
                                  model.seq_inputs: submit_inword}
@@ -187,7 +190,6 @@ def main():
                 while file_index < length-1:
                     word, next_word = file[file_index], file[file_index+1]
                     if word in begin_tag_index and (next_word == word+1):
-                        # print('i have found the beginning of the entity')
                         entity_begin_index = file_index
                         entity_head = file[entity_begin_index]
                         if entity_begin_index == length-1:  # entity开头是最后一位

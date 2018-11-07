@@ -3,6 +3,7 @@ import os.path
 import glob
 import re
 import tools
+import pickle
 from collections import Counter
 from tqdm import tqdm
 
@@ -18,6 +19,7 @@ class DataProcess(object):
         self.__train_output_path = self.__root_path + r'\data\process_data\train\\'
         self.__valid_output_path = self.__root_path + r'\data\process_data\validation\\'
         self.__submit_output_path = self.__root_path + r'\data\process_data\result\\'
+        self.__oversampling_path = self.__root_path + r'\data\process_data\oversampling\\'
         self.__file_types = ['TXT', 'ann']
         self.__validation_percentage = 0.20
         self.__test_percentage = 0
@@ -40,6 +42,7 @@ class DataProcess(object):
                                                 range(len(self.submit_files_path))))
         self.__file2batch_relationship_reverse = dict(zip(self.file2batch_relationship.values(),
                                                           self.file2batch_relationship.keys()))
+        self.__is_make_data = True
 
     @property
     def root_path(self):
@@ -67,6 +70,10 @@ class DataProcess(object):
     @property
     def valid_output_path(self):
         return self.__valid_output_path
+
+    @property
+    def oversampling_path(self):
+        return self.__oversampling_path
 
     @property
     def file_types(self):
@@ -141,6 +148,14 @@ class DataProcess(object):
     @property
     def file2batch_relationship_reverse(self):
         return self.__file2batch_relationship_reverse
+
+    @property
+    def is_make_data(self):
+        return self.__is_make_data
+
+    @is_make_data.setter
+    def is_make_data(self, value):
+        self.__is_make_data = value
 
     @staticmethod
     def __file2char(file):
@@ -278,19 +293,22 @@ class DataProcess(object):
                 char_dictionary[char] = len(char_dictionary)+1
         return char_dictionary
 
-    def _make_batch(self, x_sub2, y_sub, sentence_lengths, x_with_inword_tag):
-        train_batch_num = 0
+    def make_batch(self, x_sub2, y_sub, sentence_lengths, x_with_inword_tag, validation_percentage, train_output_path):
+        if self.is_make_data:
+            train_batch_num = 0
+        else:
+            train_batch_num = len(os.listdir(self.train_output_path))
         valid_batch_num = 0
         sample_num = len(x_sub2)
         for start in tqdm(range(0, sample_num, self.batch_size)):
-            train_batch_path = self.train_output_path + str(train_batch_num) + '.npz'
+            train_batch_path = train_output_path + str(train_batch_num) + '.npz'
             valid_batch_path = self.valid_output_path + str(valid_batch_num) + '.npz'
             end = min(start+self.batch_size, sample_num)
             x_batch = x_sub2[start:end]
             y_batch = y_sub[start:end]
             sentence_lengths_batch = sentence_lengths[start:end]
             with_inword_tag = x_with_inword_tag[start:end]
-            if np.random.rand() < self.validation_percentage:
+            if np.random.rand()+1e-8 < validation_percentage:  # 1e-8保证在oversampling期间，不会有batch保存到valid中
                 np.savez(valid_batch_path, X=x_batch, y=y_batch, len=sentence_lengths_batch, inword=with_inword_tag)
                 valid_batch_num += 1
             else:
@@ -315,9 +333,12 @@ class DataProcess(object):
         print('total count is:', total_count)
         rate = [x/total_count for x in count_by_classes]
         tags_index = 0
+        result = {}
         while tags_index < len(self.__tags_list):
+            result[self.__tags_list[tags_index]] = count_by_classes[tags_index]
             print(self.__tags_list[tags_index], ': %.3f' % rate[tags_index], '| count: ', count_by_classes[tags_index])
             tags_index += 1
+        return result
 
     def make_data(self):
         """
@@ -398,6 +419,9 @@ class DataProcess(object):
         tools.check_too_long_sentence(y_sub, self.time_step, self.check_control['check_2long_sentence'])
         # 将x映射为数字
         char_dictionary = self.__get_dictionary(x_sub)
+        if not os.path.exists(middle_path+'vocab_dict.pickle'):
+            with open(middle_path+'vocab_dict.pickle', 'wb') as handle:
+                pickle.dump(char_dictionary, handle, protocol=pickle.HIGHEST_PROTOCOL)
         x_sub2 = []
         for x_sentence in x_sub:
             temp_sentence = []
@@ -407,7 +431,8 @@ class DataProcess(object):
         # 获得x的词位置标记
         x_with_inword_tag = tools.add_in_word_index(x_sub)
         # 将x_sub2和y_sub保存成按batch的npz
-        self._make_batch(x_sub2, y_sub, sentence_lengths, x_with_inword_tag)
+        self.make_batch(x_sub2, y_sub, sentence_lengths, x_with_inword_tag,
+                        self.validation_percentage, self.train_output_path)
         self._make_submit_data(char_dictionary)
         return None
 
@@ -499,8 +524,17 @@ class DataProcess(object):
 
 
 def main():
-    my_data_process = DataProcess()
-    my_data_process.make_data()
+    is_make_data = False
+    data_process = DataProcess()
+    data_process.is_make_data = is_make_data
+    if is_make_data:
+        data_process.make_data()
+    else:
+        # 对train data进行过采样
+        check_result = data_process.check_data_classes()
+        over_x, over_y, over_length, over_inword = tools.make_oversampling(check_result, data_process.train_output_path,
+                                                                           data_process.tags, data_process.tags_prefixes[0])
+        data_process.make_batch(over_x, over_y, over_length, over_inword, 0, data_process.oversampling_path)
 
 
 if __name__ == '__main__':

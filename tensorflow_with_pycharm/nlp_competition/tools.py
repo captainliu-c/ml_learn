@@ -1,5 +1,7 @@
-import numpy as np
 import jieba
+import numpy as np
+import os
+from tqdm import tqdm
 from collections import Iterable
 
 
@@ -123,8 +125,67 @@ def add_in_word_index(sentences):
     return sentences_with_tag
 
 
-def main():
-    pass
+def make_oversampling(check_result, data_train_path, tags, tag_prefix):
+    """
+    原则：小于2000的样本追加到2000。原全部的数量为140028, 增加43batch，原batch102
+    Disease :0.246 | count: 34413 -> top2
+    Reason :0.027 | count: 3766
+    Symptom :0.031 | count: 4291
+    Test :0.318 | count: 44476 -> top1
+    Test_Value :0.063 | count: 8776
+    Drug :0.097 | count: 13541
+    Frequency :0.003 | count: 485
+    Amount :0.008 | count: 1078
+    Method :0.006 | count: 874
+    Treatment :0.007 | count: 1036
+    Operation :0.004 | count: 630
+    Anatomy :0.167 | count: 23392 -> top3
+    Level :0.011 | count: 1539
+    Duration :0.007 | count: 982
+    SideEff :0.005 | count: 749
+    """
+
+    def over_sampling(name, path, number_batches):
+        random_batch = np.random.permutation(number_batches)
+        got_one = False
+        for batch in range(number_batches):
+            batch_id = random_batch[batch]
+
+            data = np.load(path + str(batch_id) + '.npz')
+            y_data = data['y']
+            index = 0
+            while index < len(y_data):
+                sentence = y_data[index]
+                if tags[tag_prefix + name] in sentence:
+                    # print('got one')
+                    x, y, length, inword = data['X'][index], sentence, data['len'][index], data['inword'][index]
+                    got_one = True
+                    break
+                index += 1
+            if got_one:
+                break
+        return x, y, length, inword
+
+    target = 2000
+    reverse_check_result = dict(zip(check_result.values(), check_result.keys()))
+    add_pool = dict()
+    for entity_count in check_result.values():
+        if entity_count < target:
+            add_pool[reverse_check_result[entity_count]] = target-entity_count
+
+    n_tr_batches = len(os.listdir(data_train_path))
+    all_x, all_y, all_length, all_inword = [], [], [], []
+    for entity in tqdm(add_pool.keys()):
+        while add_pool[entity] > 0:
+            # 对实体做oversampling
+            one_x, one_y, one_length, one_inword = over_sampling(entity, data_train_path, n_tr_batches)
+            all_x.append(one_x)
+            all_y.append(one_y)
+            all_length.append(one_length)
+            all_inword.append(one_inword)
+
+            add_pool[entity] -= 1
+    return all_x, all_y, all_length, all_inword
 
 
 if __name__ == '__main__':

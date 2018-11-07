@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 import os
 from tensorflow.contrib.crf import crf_log_likelihood
 from tensorflow.contrib.crf import crf_decode
@@ -171,12 +170,4 @@ class BiLstmCRF(object):
 
 
 if __name__ == '__main__':
-    my_path = r'C:\Users\Neo\Documents\GitHub\ml_learn\tensorflow_with_pycharm' \
-              r'\nlp_competition\data\process_data\train\0.npz'
-    data = np.load(my_path)
-    my_settings = Settings()
-    network = BiLstmCRF(my_settings)
-    with tf.Session() as sess:
-        tf.global_variables_initializer().run()
-        feed_dict = {network.x_inputs: data['X'], network.y_inputs: data['y'], network.dropout_prob: 1}
-        print(network.lost.eval(feed_dict=feed_dict))
+    pass
