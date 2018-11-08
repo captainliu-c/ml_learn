@@ -14,12 +14,13 @@ class DataProcess(object):
             self.__root_path = os.getcwd()
         else:
             self.__root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../..")))
-        self.__input_path = self.__root_path + r'\data\raw_data\train\\'
-        self.__submit_input_path = self.__root_path + r'\data\raw_data\submit\\'
-        self.__train_output_path = self.__root_path + r'\data\process_data\train\\'
-        self.__valid_output_path = self.__root_path + r'\data\process_data\validation\\'
-        self.__submit_output_path = self.__root_path + r'\data\process_data\result\\'
-        self.__oversampling_path = self.__root_path + r'\data\process_data\oversampling\\'
+        self.__input_path = self.__root_path + r'/data/raw_data/train/'
+        self.__submit_input_path = self.__root_path + r'/data/raw_data/submit/'
+        self.__train_output_path = self.__root_path + r'/data/process_data/train/'
+        self.__valid_output_path = self.__root_path + r'/data/process_data/validation/'
+        self.__submit_output_path = self.__root_path + r'/data/process_data/result/'
+        self.__oversampling_path = self.__root_path + r'/data/process_data/oversampling/'
+        self.__middle_path = self.root_path + r'/middle/'
         self.__file_types = ['TXT', 'ann']
         self.__validation_percentage = 0.20
         self.__test_percentage = 0
@@ -42,7 +43,6 @@ class DataProcess(object):
                                                 range(len(self.submit_files_path))))
         self.__file2batch_relationship_reverse = dict(zip(self.file2batch_relationship.values(),
                                                           self.file2batch_relationship.keys()))
-        self.__is_make_data = True
 
     @property
     def root_path(self):
@@ -74,6 +74,10 @@ class DataProcess(object):
     @property
     def oversampling_path(self):
         return self.__oversampling_path
+
+    @property
+    def middle_path(self):
+        return self.__middle_path
 
     @property
     def file_types(self):
@@ -148,14 +152,6 @@ class DataProcess(object):
     @property
     def file2batch_relationship_reverse(self):
         return self.__file2batch_relationship_reverse
-
-    @property
-    def is_make_data(self):
-        return self.__is_make_data
-
-    @is_make_data.setter
-    def is_make_data(self, value):
-        self.__is_make_data = value
 
     @staticmethod
     def __file2char(file):
@@ -293,11 +289,9 @@ class DataProcess(object):
                 char_dictionary[char] = len(char_dictionary)+1
         return char_dictionary
 
-    def make_batch(self, x_sub2, y_sub, sentence_lengths, x_with_inword_tag, validation_percentage, train_output_path):
-        if self.is_make_data:
-            train_batch_num = 0
-        else:
-            train_batch_num = len(os.listdir(self.train_output_path))
+    def _make_batch(self, x_sub2, y_sub, sentence_lengths, x_with_inword_tag, validation_percentage, train_output_path,
+                    batch_num=0):
+        train_batch_num = batch_num
         valid_batch_num = 0
         sample_num = len(x_sub2)
         for start in tqdm(range(0, sample_num, self.batch_size)):
@@ -349,7 +343,7 @@ class DataProcess(object):
         3. 首先标记实体，接着标记other
         4. 删除换行符[未删除]，并根据句号进行拆分句子
         """
-        middle_path = self.root_path + r'/middle/'
+        middle_path = self.middle_path
         if not os.path.exists(middle_path+'x_sub.npy'):
             x_sub, y_sub = [], []
             sentence_lengths = []
@@ -431,12 +425,11 @@ class DataProcess(object):
         # 获得x的词位置标记
         x_with_inword_tag = tools.add_in_word_index(x_sub)
         # 将x_sub2和y_sub保存成按batch的npz
-        self.make_batch(x_sub2, y_sub, sentence_lengths, x_with_inword_tag,
-                        self.validation_percentage, self.train_output_path)
-        self._make_submit_data(char_dictionary)
+        self._make_batch(x_sub2, y_sub, sentence_lengths, x_with_inword_tag,
+                         self.validation_percentage, self.train_output_path)
         return None
 
-    def _make_submit_data(self, char_dictionary):  # char_dictionary
+    def make_submit_data(self, char_dictionary):  # char_dictionary
         submit_final = []
         submit_sentence_length = []
         file_belong = []  # len=5064
@@ -519,22 +512,26 @@ class DataProcess(object):
             batch_num += 1
         print('submit batch is done')
 
-    def my_test(self):
-        self._make_submit_data(char_dictionary={})
+    def make_oversampling_batch(self):
+        target = 2000  # 按entity数量小于2000来处理
+        check_result = self.check_data_classes()
+        over_x, over_y, over_length, over_inword = tools.make_oversampling(check_result, self.train_output_path,
+                                                                           self.tags, self.tags_prefixes[0], target)
+        n_batch_start = len(os.listdir(self.train_output_path))
+        self._make_batch(over_x, over_y, over_length, over_inword, 0, self.oversampling_path, batch_num=n_batch_start)
 
 
 def main():
-    is_make_data = False
     data_process = DataProcess()
-    data_process.is_make_data = is_make_data
-    if is_make_data:
-        data_process.make_data()
-    else:
-        # 对train data进行过采样
-        check_result = data_process.check_data_classes()
-        over_x, over_y, over_length, over_inword = tools.make_oversampling(check_result, data_process.train_output_path,
-                                                                           data_process.tags, data_process.tags_prefixes[0])
-        data_process.make_batch(over_x, over_y, over_length, over_inword, 0, data_process.oversampling_path)
+
+    # 生成train和validation数据
+    data_process.make_data()
+    # 生成submit数据
+    with open(data_process.middle_path + 'vocab_dict.pickle', 'rb') as handle:
+        vocab_dict = pickle.load(handle)
+    data_process.make_submit_data(vocab_dict)
+    # 根据实际情况决定进行oversampling
+    # data_process.make_oversampling_batch()
 
 
 if __name__ == '__main__':

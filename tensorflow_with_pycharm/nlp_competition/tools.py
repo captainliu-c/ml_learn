@@ -125,7 +125,7 @@ def add_in_word_index(sentences):
     return sentences_with_tag
 
 
-def make_oversampling(check_result, data_train_path, tags, tag_prefix):
+def make_oversampling(check_result, data_train_path, tags, tag_prefix, target):
     """
     原则：小于2000的样本追加到2000。原全部的数量为140028, 增加43batch，原batch102
     Disease :0.246 | count: 34413 -> top2
@@ -166,7 +166,6 @@ def make_oversampling(check_result, data_train_path, tags, tag_prefix):
                 break
         return x, y, length, inword
 
-    target = 2000
     reverse_check_result = dict(zip(check_result.values(), check_result.keys()))
     add_pool = dict()
     for entity_count in check_result.values():
@@ -186,6 +185,18 @@ def make_oversampling(check_result, data_train_path, tags, tag_prefix):
 
             add_pool[entity] -= 1
     return all_x, all_y, all_length, all_inword
+
+
+def get_batch(data_path, data_id, is_submit=False):
+    data = np.load(data_path + str(data_id) + '.npz')
+    if not is_submit:
+        return data['X'], data['inword'], data['len'], data['y']
+    else:
+        return data['X'], data['inword'], data['len'], data['belong'], data['comma']
+
+
+def get_jieba_dict():
+    pass
 
 
 if __name__ == '__main__':

@@ -3,12 +3,11 @@ import numpy as np
 import network
 import os
 from tqdm import tqdm
-from data_process import DataProcess
+from tools import get_batch
 
 flags = tf.flags
 flags.DEFINE_float('decay_rate', 0.60, 'lr decay rate, default: 0.65')
 flags.DEFINE_integer('max_epoch', 20, 'all training epochs, default: 6')
-flags.DEFINE_bool('submit_control', False, 'if True, the train.py will use cpk to predict submit data')
 
 flags.DEFINE_float('clip', 5, 'Gradient clip')
 flags.DEFINE_float('lr', 1e-3, 'initial learning rate, default: 1e-3')
@@ -18,56 +17,57 @@ flags.DEFINE_float('last_accuracy', 0.90, 'if valid_accuracy > last_accuracy, sa
 
 SETTINGS = network.Settings()
 ROOT_PATH = SETTINGS.root_path
-DATA_TRAIN_PATH = ROOT_PATH + r'\data\process_data\train\\'
-DATA_VALID_PATH = ROOT_PATH + r'\data\process_data\validation\\'
-DATA_SUBMIT_PATH = ROOT_PATH + r'\data\process_data\result\\'
-DATA_SUBMIT_OUT_PATH = ROOT_PATH + r'\data\process_data\submit\\'
+DATA_TRAIN_PATH = ROOT_PATH + r'/data/process_data/train/'
+DATA_VALID_PATH = ROOT_PATH + r'/data/process_data/validation/'
 MODEL_PATH = SETTINGS.ckpt_path + 'model.ckpt'
 SUMMARY_PATH = SETTINGS.summary_path
 TRAIN_DROPOUT, NOT_TRAIN_DROPOUT = 0.5, 1.0
-TRAIN_BATCH_SIZE, SUBMIT_BATCH_SIZE = 200, 129
-
-TR_BATCHES, VA_BATCHES, SUB_BATCHES = os.listdir(DATA_TRAIN_PATH),\
-                                      os.listdir(DATA_VALID_PATH),\
-                                      os.listdir(DATA_SUBMIT_PATH)
-N_TR_BATCHES, N_VA_BATCHES, N_SUB_BATCHES = len(TR_BATCHES), len(VA_BATCHES), len(SUB_BATCHES)
+TRAIN_BATCH_SIZE = 200
+N_TR_BATCHES, N_VA_BATCHES = len(os.listdir(DATA_TRAIN_PATH)), len(os.listdir(DATA_VALID_PATH))
 
 FLAGS = flags.FLAGS
 LEARNING_RATE = FLAGS.lr
 LR_DECAY_RATE = FLAGS.decay_rate
 DECAY_STEP = FLAGS.decay_step
 LAST_ACCURACY = FLAGS.last_accuracy
-SUBMIT_CONTROL = FLAGS.submit_control
 CLIP = FLAGS.clip
 
 
-def get_batch(data_path, data_id):
-    data = np.load(data_path+str(data_id)+'.npz')
-    if not SUBMIT_CONTROL:
-        return data['X'], data['y'], data['len'], data['inword']
+def get_feed_dict(model, get_batch_return, batch_size, feed_control):
+    """
+    :param model: network
+    :param get_batch_return: train or valid --> x, y, sentence_length, inword : 4
+                                     submit --> x, len, belong, comma, inword : 5
+    :param feed_control: is_train, is_valid, is_submit
+    :param batch_size: train[valid]batch_size or submit batch_size
+    :return: feed_dict
+    """
+    data_list = list(get_batch_return)
+    feed_dict = {model.x_inputs: data_list[0], model.seq_inputs: data_list[1], model.sentence_lengths: data_list[2],
+                 model.batch_size: batch_size}
+    if feed_control in ['is_train', 'is_valid']:
+        feed_dict[model.y_inputs] = data_list[3]
+        feed_dict[model.dropout_prob] = TRAIN_DROPOUT
+        if feed_control == 'is_valid':
+            feed_dict[model.dropout_prob] = NOT_TRAIN_DROPOUT
+    elif feed_control == 'is_submit':
+        feed_dict[model.dropout_prob] = NOT_TRAIN_DROPOUT
     else:
-        return data['X'], data['len'], data['belong'], data['comma'], data['inword']
-
-
-def get_feed_dict():
-    pass
+        raise ValueError('no control type:', feed_control)
+    return feed_dict
 
 
 def valid_epoch(path, model, sess):
     _accuracy_list = list()
     for batch_id in range(N_VA_BATCHES):
-        x_batch, y_batch, sentence_length, inword = get_batch(path, batch_id)  # fetches = [model.accuracy]
-        feed_dict = {model.x_inputs: x_batch, model.y_inputs: y_batch, model.batch_size: TRAIN_BATCH_SIZE,
-                     model.sentence_lengths: sentence_length, model.dropout_prob: NOT_TRAIN_DROPOUT,
-                     model.seq_inputs: inword}
-        # _fetches = [model.accuracy, ]  # [model.accuracy, model.conf_matrix]
+        feed_dict = get_feed_dict(model, get_batch(path, batch_id), TRAIN_BATCH_SIZE, feed_control='is_valid')
         accuracy = sess.run(model.accuracy, feed_dict)
         _accuracy_list.append(accuracy)
     mean_accuracy = sess.run(tf.reduce_mean(_accuracy_list))
     return mean_accuracy
 
 
-def train_epoch(path, model, sess, train_fetches, valid_fetches, train_writer, test_writer):
+def train_epoch(valid_path, model, sess, train_fetches, valid_fetches, train_writer, test_writer):
     global LEARNING_RATE
     global LAST_ACCURACY
 
@@ -75,19 +75,16 @@ def train_epoch(path, model, sess, train_fetches, valid_fetches, train_writer, t
     for batch in tqdm(range(N_TR_BATCHES)):
         global_steps = sess.run(model.global_steps)
         if (global_steps+1) % FLAGS.valid_step == 0:
-            mean_accuracy = valid_epoch(path, model, sess)
+            mean_accuracy = valid_epoch(valid_path, model, sess)
             if mean_accuracy > LAST_ACCURACY:
                 LAST_ACCURACY = mean_accuracy
                 saving_path = model.saver.save(sess, MODEL_PATH, global_steps+1)
                 print('saved new model to %s ' % saving_path)
             print('the step is %d and the validation mean accuracy is %g' % (global_steps + 1, mean_accuracy))
 
-        # random_batch = np.random.permutation(N_TR_BATCHES)
         batch_id = random_batch[batch]
-        x_data, y_data, sentence_lengths, inword = get_batch(DATA_TRAIN_PATH, batch_id)
-        feed_dict = {model.x_inputs: x_data, model.y_inputs: y_data, model.batch_size: TRAIN_BATCH_SIZE,
-                     model.dropout_prob: TRAIN_DROPOUT, model.sentence_lengths: sentence_lengths,
-                     model.seq_inputs: inword}
+        feed_dict = get_feed_dict(model, get_batch(DATA_TRAIN_PATH, batch_id),
+                                  TRAIN_BATCH_SIZE, feed_control='is_train')
         summary, _ = sess.run(train_fetches, feed_dict)
 
         if (global_steps+1) % 20 == 0:
@@ -123,141 +120,19 @@ def main():
         if os.path.exists(SETTINGS.ckpt_path + 'checkpoint'):
             print('Restoring Variables from Checkpoint...')
             model.saver.restore(sess, tf.train.latest_checkpoint(SETTINGS.ckpt_path))
-            mean_accuracy = valid_epoch(DATA_TRAIN_PATH, model, sess)
+            mean_accuracy = valid_epoch(DATA_VALID_PATH, model, sess)
             print('valid mean accuracy is %g' % mean_accuracy)
             sess.run(tf.variables_initializer(training_ops))
         else:
             print('Initializing Variables...')
             tf.global_variables_initializer().run()
 
-        if SUBMIT_CONTROL:
-            _data_process = DataProcess()
-            total_predict, total_belong, is_commas_total = [], [], []
-            file2batch_relationship_reverse = _data_process.file2batch_relationship_reverse
-            _entity_tag = _data_process.tags
-            entity_tag = dict(zip(_entity_tag.values(), _entity_tag.keys()))
-            begin_tag_index = [x for x in list(_entity_tag.values())[1:] if (x+1) % 2 == 0]
-
-            middle_files_path = ROOT_PATH + r'/middle/files.npy'
-            if os.path.exists(middle_files_path):
-                files = list(np.load(middle_files_path))
-            else:
-                # 获得batch的预测结果
-                for batch_id in tqdm(range(N_SUB_BATCHES)):  # 24=batch数量
-                    submit_x, submit_length, submit_belong, is_comma, submit_inword = \
-                        get_batch(DATA_SUBMIT_PATH, batch_id)
-                    feed_dict = {model.x_inputs: submit_x, model.sentence_lengths: submit_length,
-                                 model.batch_size: SUBMIT_BATCH_SIZE, model.dropout_prob: NOT_TRAIN_DROPOUT,
-                                 model.seq_inputs: submit_inword}
-                    _predict = sess.run(model.predict_sentence, feed_dict=feed_dict)
-                    # 恢复sentence为真实长度
-                    __index = 0
-                    for pred_sentence in _predict:
-                        len_sentence = list(submit_length)[__index]  # predict和length在源数据中必须一一对应
-                        total_predict.append(pred_sentence[:len_sentence])
-                        __index += 1
-                    is_commas_total.extend(is_comma)
-                    total_belong.extend(submit_belong)
-                # 添加句号，恢复原始index
-                files = []  # 索引即是ID
-                global_index = 0
-                for file_id in range(59):  # 50=submit原文件数量
-                    file_size = total_belong.count(file_id)  # 确认有多少行sentence
-                    # print('file id: %d file size: %d' % (file_id, file_size))
-                    _file = total_predict[global_index:global_index+file_size]  # 切片出当前的_file
-
-                    sentence_index = 1
-                    flatten_article = list(_file[0])  # 将file拍成一维，并且处理句号
-                    while sentence_index < file_size:
-                        if is_commas_total[global_index+sentence_index] == 1:
-                            flatten_article.extend('。')
-                            flatten_article.extend(_file[sentence_index])
-                        else:
-                            flatten_article.extend(_file[sentence_index])
-                        sentence_index += 1
-                    global_index += file_size
-                    files.append(flatten_article)
-                np.save(middle_files_path, files)
-
-            for file in tqdm(files):
-                # 获得文件名
-                file_name = file2batch_relationship_reverse[files.index(file)]  # file在files中是唯一的
-                print('file name:', file_name)
-                # 查找合法的实体开头
-                global_id = 1
-                file_index = 0
-                length = len(file)
-                while file_index < length-1:
-                    word, next_word = file[file_index], file[file_index+1]
-                    if word in begin_tag_index and (next_word == word+1):
-                        entity_begin_index = file_index
-                        entity_head = file[entity_begin_index]
-                        if entity_begin_index == length-1:  # entity开头是最后一位
-                            print('i have found the entity with no body shows the last one at the file')
-                            break
-                        # 查找实体结尾
-                        entity_index = entity_begin_index + 1
-                        if entity_index == length-1:  # 在文档末尾这种形式 [entity_head] + [entity_body]
-                            entity_end_index = entity_index
-                            print('i have found 在文档末尾这种形式 [entity_head] + [entity_body]')
-                        else:
-                            while entity_index < length-1:
-                                # print(entity_index)
-                                entity_body, next_entity_body = file[entity_index], file[entity_index+1]
-                                if entity_body != entity_head+1:
-                                    if entity_body == 0 and next_entity_body == entity_head+1:
-                                        entity_index = min(entity_index + 1, length - 1)
-                                        entity_end_index = entity_index
-                                    else:
-                                        entity_end_index = entity_index
-                                        file_index = entity_end_index-1
-                                        break
-                                else:
-                                    entity_index = min(entity_index + 1, length - 1)
-                                    entity_end_index = entity_index
-                        # if 0 in file[entity_begin_index:entity_end_index]:
-                        # print('see:', file[entity_begin_index:entity_end_index])
-
-                        # # 获得实体类别
-                        entity_type = entity_tag.get(file[entity_begin_index], 'wrong')
-                        if entity_type == 'wrong':
-                            raise ValueError('could not find the key:', file[entity_begin_index])
-                        # 将global_id、实体类别、index相关、empty写入文件
-                        content_1 = 'T' + str(global_id) + '\t'
-                        content_3 = '\t' + 'empty'
-                        # 生成实体的index，处理换行的情况
-                        index_pair = [entity_begin_index]
-                        entity_slice = file[entity_begin_index:entity_end_index]
-                        for j in entity_slice:
-                            if j == 0:
-                                _new_begin = entity_begin_index+entity_slice.index(j)
-                                index_pair.append(_new_begin)
-                                index_pair.append(_new_begin+1)
-                        index_pair.append(entity_end_index)
-                        # 补全content_2
-                        content_2 = entity_type[2:] + ' ' + str(index_pair[0])
-                        final_index = 1
-                        for _ in range(int(len(index_pair)/2)-1):
-                            content_2 = (content_2 + ' '
-                                         + str(index_pair[final_index]) + ';' + str(index_pair[final_index+1]))
-                            final_index += 2
-                        content_2 = content_2 + ' ' + str(index_pair[-1])
-                        # 合并content
-                        content = content_1+content_2+content_3+'\n'
-                        global_id += 1
-                        # 写入文件
-                        submit_path = DATA_SUBMIT_OUT_PATH + file_name.replace('txt', 'ann')
-                        with open(submit_path, 'a') as f:  # 如果file不存在，会创建吗
-                            f.write(content)
-                    file_index += 1
-
-        else:
-            for epoch in range(FLAGS.max_epoch):
-                global_step = sess.run(model.global_steps)
-                print('the step is %d, and the learning rate is %g' % (global_step, sess.run(learning_rate)))
-                train_fetches = [merged, train_op]
-                valid_fetches = [merged, model.lost]
-                train_epoch(DATA_VALID_PATH, model, sess, train_fetches, valid_fetches, train_writer, test_writer)
+        for epoch in range(FLAGS.max_epoch):
+            global_step = sess.run(model.global_steps)
+            print('the step is %d, and the learning rate is %g' % (global_step, sess.run(learning_rate)))
+            train_fetches = [merged, train_op]
+            valid_fetches = [merged, model.lost]
+            train_epoch(DATA_VALID_PATH, model, sess, train_fetches, valid_fetches, train_writer, test_writer)
 
 
 if __name__ == '__main__':

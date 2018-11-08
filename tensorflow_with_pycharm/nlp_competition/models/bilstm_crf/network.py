@@ -9,18 +9,20 @@ from tensorflow.contrib.layers.python.layers import initializers
 class Settings(object):
     def __init__(self):
         self.model_name = 'bi_lstm_crf'
-        self.embedding_size = 200  # 即使500的话，效果也不好
-        self.seq_dim = 40
-        self.time_step = 150
-        self.hidden_size = 200  # 即使500的话，效果也不好
+        self.embedding_size = 100  # 即使500的话，效果也不好
+        self.hidden_size = 100  # 即使500的话，效果也不好
         self.layers_num = 1
+        self.embed_dropout_prob = 1.0
+        self.seq_dim = 40
+
+        self.weights_decay = 0.001
+        self.time_step = 150
         self.n_classes = 31
         self.n_seq = 4
         self.vocabulary_size = 3000
-        self.weights_decay = 0.001  # 后期再改，目前是高偏差，还没到overfit那一步
         self.root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../..")))
-        self.ckpt_path = self.root_path + r'\ckpt\\' + self.model_name + '\\'
-        self.summary_path = self.root_path + r'\summary\\' + self.model_name + '\\'
+        self.ckpt_path = self.root_path + r'/ckpt/' + self.model_name + '/'
+        self.summary_path = self.root_path + r'/summary/' + self.model_name + '/'
 
 
 class BiLstmCRF(object):
@@ -37,6 +39,7 @@ class BiLstmCRF(object):
         self.n_seq = settings.n_seq
         self.vocabulary_size = settings.vocabulary_size
         self._weights_decay = settings.weights_decay
+        self._embed_dropout_prob = settings.embed_dropout_prob
         self._global_steps = tf.Variable(0, trainable=False, name='Global_Step')
         self.initializer = initializers.xavier_initializer()
 
@@ -61,7 +64,7 @@ class BiLstmCRF(object):
                                                      dtype=tf.float32, trainable=True, name='seq_embedding')
                 self._embedding.append(tf.nn.embedding_lookup(self.seq_embedding, self.seq_inputs))
             self.embedding = tf.concat(self._embedding, axis=-1)
-            self.embedding = tf.nn.dropout(self.embedding, 1.0)
+            self.embedding = tf.nn.dropout(self.embedding, self._embed_dropout_prob)
         with tf.variable_scope('bi_lstm'):
             bi_lstm_output = self.inference(self.embedding)
             bi_lstm_output = tf.nn.dropout(bi_lstm_output, self._dropout_prob)
@@ -151,15 +154,18 @@ class BiLstmCRF(object):
         return var
 
     def inference(self, inputs):
+        def basic_cell(hidden_size, initializer):
+            _cell = rnn.CoupledInputForgetGateLSTMCell(
+                hidden_size,
+                use_peepholes=True,
+                initializer=initializer)
+            return _cell
+
         lstm_cell = {}
         for direction in ['forward', 'backward']:
             with tf.variable_scope(direction):
-                lstm_cell[direction] = rnn.CoupledInputForgetGateLSTMCell(
-                    self.hidden_size,
-                    use_peepholes=True,
-                    initializer=self.initializer,
-                    state_is_tuple=True
-                )
+                lstm_cell[direction] = rnn.MultiRNNCell(
+                    [basic_cell(self.hidden_size, self.initializer) for _ in range(self.layers_num)])
 
         (outputs_fw, outputs_bw), _ = tf.nn.bidirectional_dynamic_rnn(
             cell_fw=lstm_cell['forward'], cell_bw=lstm_cell['backward'], inputs=inputs,
