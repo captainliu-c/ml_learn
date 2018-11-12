@@ -9,8 +9,8 @@ from tensorflow.contrib.layers.python.layers import initializers
 class Settings(object):
     def __init__(self):
         self.model_name = 'bi_lstm_crf'
-        self.embedding_size = 50  # 即使500的话，效果也不好
-        self.hidden_size = 50  # 即使500的话，效果也不好
+        self.embedding_size = 200  # 即使500的话，效果也不好
+        self.hidden_size = 200  # 即使500的话，效果也不好
         self.layers_num = 1
         self.embed_dropout_prob = 1.0
         self.seq_dim = 40

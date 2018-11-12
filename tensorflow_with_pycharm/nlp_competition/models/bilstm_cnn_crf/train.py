@@ -3,7 +3,7 @@ import numpy as np
 import network
 import os
 from tqdm import tqdm
-from tools import get_batch
+from bilstm_cnn_crf.tools import get_batch
 
 SETTINGS = network.Settings()
 ROOT_PATH = SETTINGS.root_path
@@ -17,11 +17,11 @@ N_TR_BATCHES, N_VA_BATCHES = len(os.listdir(DATA_TRAIN_PATH)), len(os.listdir(DA
 
 LEARNING_RATE = 1e-3
 LR_DECAY_RATE = 0.60
-DECAY_STEP = 145
+DECAY_STEP = 154
 LAST_ACCURACY = 0.90
 CLIP = 5
 MAX_EPOCH = 20
-VALID_STEP = 100
+VALID_STEP = 150
 
 
 def get_feed_dict(model, get_batch_return, batch_size, feed_control):

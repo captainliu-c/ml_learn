@@ -3,7 +3,7 @@ import numpy as np
 import network
 import os
 from tqdm import tqdm
-from tools import get_batch
+from bilstm_cnn_crf.tools import get_batch
 
 flags = tf.flags
 flags.DEFINE_float('decay_rate', 0.60, 'lr decay rate, default: 0.65')

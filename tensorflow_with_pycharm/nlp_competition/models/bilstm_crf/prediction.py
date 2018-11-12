@@ -3,7 +3,7 @@ import numpy as np
 import os
 import network
 from tqdm import tqdm
-from tools import get_batch
+from bilstm_cnn_crf.tools import get_batch
 from data_process import DataProcess
 from train import valid_epoch, get_feed_dict
 

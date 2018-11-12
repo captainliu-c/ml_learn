@@ -3,12 +3,12 @@ import numpy as np
 import os
 import network
 from tqdm import tqdm
-from tools import get_batch
+from bilstm_cnn_crf.tools import get_batch
 from data_process import DataProcess
 from train import valid_epoch, get_feed_dict
 
 SETTINGS = network.Settings()
-SUBMIT_BATCH_SIZE = 129
+SUBMIT_BATCH_SIZE = 500
 
 ROOT_PATH = SETTINGS.root_path
 DATA_VALID_PATH = ROOT_PATH + r'/data/process_data/validation/'
@@ -147,7 +147,7 @@ def main():
     config.gpu_options.allow_growth = True
 
     with tf.Session(config=config) as sess:
-        model = network.BiLstmCRF(SETTINGS)
+        model = network.BiLstmCNNCRF(SETTINGS)
         if not os.path.exists(middle_files_path):
             print('Restoring Variables from Checkpoint...')
             model.saver.restore(sess, tf.train.latest_checkpoint(SETTINGS.ckpt_path))

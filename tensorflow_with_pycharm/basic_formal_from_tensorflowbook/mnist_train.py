@@ -22,12 +22,12 @@ MODEL_NAME = 'model.ckpt'
 def train(train_data):
     x = tf.placeholder(tf.float32, [None, mnist_inference.INPUT_NODE], 'X')
     y_ = tf.placeholder(tf.int32, [None, mnist_inference.OUTPUT_NODE], 'Y')
-    global_steps = tf.Variable(0, trainable=False)  # 如何自增的？
-    y = mnist_inference.inference(x, wb=REGULAR_DECAY)  # 顺序的问题??!
+    global_steps = tf.Variable(0, trainable=False)  # 梯度下降提供自增，average variables and learning rate使用
+    y = mnist_inference.inference(x, wb=REGULAR_DECAY)
 
     """准备好variable average op"""
     variable_averages = tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY, global_steps)
-    variable_averages_op = variable_averages.apply(tf.trainable_variables())  # 滑动平均后的weight是如何被训练过程中使用的呢？
+    variable_averages_op = variable_averages.apply(tf.trainable_variables())  # 滑动平均仅给eval使用，训练的时候不使用
 
     """准备好train step op"""
     cross = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y, labels=tf.argmax(y_, 1))
