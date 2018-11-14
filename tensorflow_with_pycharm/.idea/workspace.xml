@@ -64,41 +64,41 @@
     <session id="1501712963">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="59" />
+          <entry key="project.closed" value="61" />
           <entry key="project.open.time.0" value="1" />
           <entry key="project.open.time.3" value="2" />
           <entry key="project.open.time.4" value="13" />
-          <entry key="project.open.time.5" value="16" />
+          <entry key="project.open.time.5" value="17" />
           <entry key="project.open.time.6" value="12" />
           <entry key="project.open.time.7" value="10" />
           <entry key="project.open.time.8" value="4" />
-          <entry key="project.opened" value="60" />
+          <entry key="project.opened" value="61" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="Python Console" value="4" />
           <entry key="data_process" value="2" />
-          <entry key="py" value="80958" />
+          <entry key="py" value="80960" />
           <entry key="train" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="80965" />
+          <entry key="Python" value="80967" />
           <entry key="RegExp" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="pstat" value="1" />
-          <entry key="py" value="292" />
+          <entry key="py" value="293" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="Profiler Session" value="1" />
-          <entry key="Python" value="292" />
+          <entry key="Python" value="293" />
         </counts>
       </usages-collector>
     </session>
@@ -108,35 +108,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/tools.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="645">
-              <caret line="232" column="22" selection-start-line="232" selection-start-column="22" selection-end-line="232" selection-end-column="22" />
-              <folding>
-                <element signature="e#0#12#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/train.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="396">
-              <caret line="22" column="14" selection-start-line="22" selection-start-column="14" selection-end-line="22" selection-end-column="14" />
-              <folding>
-                <element signature="e#0#23#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/prediction.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="42">
-              <caret line="10" column="23" selection-start-line="10" selection-start-column="23" selection-end-line="10" selection-end-column="23" />
+            <state relative-caret-position="43">
+              <caret line="53" column="30" selection-start-line="53" selection-start-column="30" selection-end-line="53" selection-end-column="30" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -221,8 +197,8 @@
         <option value="$PROJECT_DIR$/nlp_competition/tools.py" />
         <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/tools.py" />
         <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/train.py" />
-        <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/prediction.py" />
         <option value="$PROJECT_DIR$/nlp_competition/data_process.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/prediction.py" />
       </list>
     </option>
   </component>
@@ -232,7 +208,7 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="47" />
     <option name="width" value="1401" />
     <option name="height" value="981" />
@@ -307,7 +283,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.train (1)">
+  <component name="RunManager" selected="Python.prediction (1)">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -334,6 +310,9 @@
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nlp_competition" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -353,9 +332,6 @@
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -419,6 +395,9 @@
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -443,11 +422,11 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.prediction (1)" />
         <item itemvalue="Python.train (1)" />
         <item itemvalue="Python.data_process" />
         <item itemvalue="Python.tools (1)" />
         <item itemvalue="Python.tools" />
-        <item itemvalue="Python.prediction (1)" />
       </list>
     </recent_temporary>
   </component>
@@ -506,7 +485,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1456" height="876" extended-state="7" />
+    <frame x="-8" y="-8" width="1456" height="876" extended-state="6" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49662617" visible="true" weight="0.1854725" />
       <window_info id="Structure" order="1" sideWeight="0.5033738" side_tool="true" weight="0.16925247" />
@@ -521,7 +500,7 @@
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32793522" />
       <window_info anchor="bottom" id="Terminal" order="8" sideWeight="0.49960285" weight="0.6693657" />
       <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50423133" side_tool="true" weight="0.659919" />
-      <window_info active="true" anchor="bottom" id="Python Console" order="10" sideWeight="0.4957687" visible="true" weight="0.7597841" />
+      <window_info active="true" anchor="bottom" id="Python Console" order="10" sideWeight="0.4957687" visible="true" weight="0.75843453" />
       <window_info anchor="bottom" id="Docker" order="11" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" order="12" show_stripe_button="false" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
@@ -842,13 +821,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/network.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="522">
-          <caret line="29" lean-forward="true" selection-start-line="29" selection-end-line="29" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_crf/train.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1026">
@@ -877,9 +849,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/nlp_competition/data_process.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="370">
+          <caret line="303" column="38" selection-start-line="303" selection-start-column="28" selection-end-line="303" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/tools.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="645">
+        <state relative-caret-position="4050">
           <caret line="232" column="22" selection-start-line="232" selection-start-column="22" selection-end-line="232" selection-end-column="22" />
           <folding>
             <element signature="e#0#12#0" expanded="true" />
@@ -897,24 +876,19 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/prediction.py">
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/network.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="42">
-          <caret line="10" column="23" selection-start-line="10" selection-start-column="23" selection-end-line="10" selection-end-column="23" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="432">
+          <caret line="29" lean-forward="true" selection-start-line="29" selection-end-line="29" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/nlp_competition/data_process.py">
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/prediction.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="370">
-          <caret line="303" column="38" selection-start-line="303" selection-start-column="28" selection-end-line="303" selection-end-column="38" />
+        <state relative-caret-position="43">
+          <caret line="53" column="30" selection-start-line="53" selection-start-column="30" selection-end-line="53" selection-end-column="30" />
           <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <marker date="1542010970977" expanded="true" signature="5095:5101" ph="..." />
-            <marker date="1542010970977" expanded="true" signature="8430:8436" ph="..." />
+            <element signature="e#0#23#0" expanded="true" />
           </folding>
         </state>
       </provider>
