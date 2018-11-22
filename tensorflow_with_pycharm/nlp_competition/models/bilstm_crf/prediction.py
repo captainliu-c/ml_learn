@@ -3,7 +3,7 @@ import numpy as np
 import os
 import network
 from tqdm import tqdm
-from tools import get_batch
+from bilstm_cnn_crf.tools import get_batch
 from data_process import DataProcess
 from train import valid_epoch, get_feed_dict
 
@@ -148,10 +148,11 @@ def main():
 
     with tf.Session(config=config) as sess:
         model = network.BiLstmCRF(SETTINGS)
-        print('Restoring Variables from Checkpoint...')
-        model.saver.restore(sess, tf.train.latest_checkpoint(SETTINGS.ckpt_path))
-        mean_accuracy = valid_epoch(DATA_VALID_PATH, model, sess)
-        print('valid mean accuracy is %g' % mean_accuracy)
+        if not os.path.exists(middle_files_path):
+            print('Restoring Variables from Checkpoint...')
+            model.saver.restore(sess, tf.train.latest_checkpoint(SETTINGS.ckpt_path))
+            mean_accuracy = valid_epoch(DATA_VALID_PATH, model, sess)
+            print('valid mean accuracy is %g' % mean_accuracy)
         predict(model, sess)
 
 

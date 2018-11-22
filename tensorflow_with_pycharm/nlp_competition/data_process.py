@@ -2,7 +2,7 @@ import numpy as np
 import os.path
 import glob
 import re
-import tools
+from bilstm_cnn_crf import tools
 import pickle
 from collections import Counter
 from tqdm import tqdm
@@ -12,7 +12,7 @@ class DataProcess(object):
     def __init__(self):
         if __name__ == '__main__':
             self.__root_path = os.getcwd()
-        else:
+        else:  # module调用
             self.__root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), "../..")))
         self.__input_path = self.__root_path + r'/data/raw_data/train/'
         self.__submit_input_path = self.__root_path + r'/data/raw_data/submit/'
@@ -29,7 +29,7 @@ class DataProcess(object):
         self.__time_step = 150  # train set中超过这个数的比例是0.117835
         self.__dictionary_size = 3000  # real 3242, 经过根据句子长度截断处理后变为3147
         self.__batch_size = 200
-        self.__submit_batch_size = 129
+        self.__submit_batch_size = 500
         self.__tags_prefixes = ['B_', 'I_']
         self.__tags_list = ['Disease', 'Reason', 'Symptom', 'Test', 'Test_Value', 'Drug', 'Frequency', 'Amount',
                             'Method', 'Treatment', 'Operation', 'Anatomy', 'Level', 'Duration', 'SideEff']
@@ -58,7 +58,7 @@ class DataProcess(object):
 
     @input_path.setter
     def input_path(self, path):
-        if type(path) == 'str':  # 可以加一些其他的判断
+        if type(path) == 'str':
             self.__input_path = path
         else:
             raise ValueError('the path must be a string')
@@ -152,6 +152,10 @@ class DataProcess(object):
     @property
     def file2batch_relationship_reverse(self):
         return self.__file2batch_relationship_reverse
+
+    @property
+    def tags_list(self):
+        return self.__tags_list
 
     @staticmethod
     def __file2char(file):
@@ -289,24 +293,24 @@ class DataProcess(object):
                 char_dictionary[char] = len(char_dictionary)+1
         return char_dictionary
 
-    def _make_batch(self, x_sub2, y_sub, sentence_lengths, x_with_inword_tag, validation_percentage, train_output_path,
-                    batch_num=0):
+    def _make_batch(self, datas, output_path, batch_size, validation_percentage=0.0, batch_num=0):
         train_batch_num = batch_num
         valid_batch_num = 0
-        sample_num = len(x_sub2)
-        for start in tqdm(range(0, sample_num, self.batch_size)):
-            train_batch_path = train_output_path + str(train_batch_num) + '.npz'
+        sample_num = len(datas['X'])
+        for start in tqdm(range(0, sample_num, batch_size)):
+            train_batch_path = output_path + str(train_batch_num) + '.npz'
             valid_batch_path = self.valid_output_path + str(valid_batch_num) + '.npz'
-            end = min(start+self.batch_size, sample_num)
-            x_batch = x_sub2[start:end]
-            y_batch = y_sub[start:end]
-            sentence_lengths_batch = sentence_lengths[start:end]
-            with_inword_tag = x_with_inword_tag[start:end]
+            batch = {'X': -1, 'y': -1, 'len': -1, 'inword': -1, 'belong': -1, 'comma': -1}
+            end = min(start+batch_size, sample_num)
+            for key, value in datas.items():
+                batch[key] = value[start:end]
             if np.random.rand()+1e-8 < validation_percentage:  # 1e-8保证在oversampling期间，不会有batch保存到valid中
-                np.savez(valid_batch_path, X=x_batch, y=y_batch, len=sentence_lengths_batch, inword=with_inword_tag)
+                np.savez(valid_batch_path, X=batch['X'], y=batch['y'], len=batch['len'], inword=batch['inword'],
+                         belong=batch['belong'], comma=batch['comma'])
                 valid_batch_num += 1
             else:
-                np.savez(train_batch_path, X=x_batch, y=y_batch, len=sentence_lengths_batch, inword=with_inword_tag)
+                np.savez(train_batch_path, X=batch['X'], y=batch['y'], len=batch['len'], inword=batch['inword'],
+                         belong=batch['belong'], comma=batch['comma'])
                 train_batch_num += 1
         print('Finish! Train batch number is %d, validation batch number is %d' % (train_batch_num, valid_batch_num))
 
@@ -347,8 +351,8 @@ class DataProcess(object):
         if not os.path.exists(middle_path+'x_sub.npy'):
             x_sub, y_sub = [], []
             sentence_lengths = []
+            result_data = {'x': x_sub, 'y': y_sub}
             for y_file_path in tqdm(self.y_files_path):
-                y_final, x_final = [], []
                 start_index = 0
                 x_file_path = re.sub('%s' % self.file_types[1], '%s' % self.file_types[0], y_file_path)
                 x_file_name = re.split('\\\\', x_file_path)[-1]
@@ -368,32 +372,27 @@ class DataProcess(object):
                 x_raw_data = [x for x in x_file]  # target_delete(x_raw_data, target='\n')
                 assert len(y_with_tag) == len(x_raw_data)
 
-                # 拆分句子，并对句子进行处理
+                # 拆分句子，并对句子进行padding处理
+                raw_data = {'x': x_raw_data, 'y': y_with_tag}
                 index = 0
                 while index < len(y_with_tag):  # 如果最后一个字符不是self.commas的话，最后一段data会少append进去
-                    y_data = y_with_tag[index]  # 但是似乎影响也不大
-                    x_data = x_raw_data[index]
+                    y_data = raw_data['y'][index]  # 但是似乎影响也不大
                     if y_data in self.commas:
-                        assert x_data == y_data
-                        if index - start_index < self.time_step:
-                            y_sentence = y_with_tag[start_index:index]
-                            x_sentence = x_raw_data[start_index:index]
-                            for _ in range(self.time_step-(index-start_index)):
-                                y_sentence.append(0)
-                                x_sentence.append(self.padding_comma)  # 仅仅是0.txt的话,就补了10089个,补的太多会不会有问题
-                            y_final.append(y_sentence)
-                            x_final.append(x_sentence)
-                            sentence_lengths.append(index-start_index)
-                        else:
-                            assert index >= start_index+self.time_step
-                            y_final.append(y_with_tag[start_index:start_index+self.time_step])
-                            x_final.append(x_raw_data[start_index:start_index+self.time_step])
-                            sentence_lengths.append(self.time_step)
+                        assert y_data == raw_data['x'][index]
+                        padding_count = len([x for x in range(self.time_step-(index-start_index))])
+                        end_index = min(start_index+self.time_step, index)
+                        for name in ['x', 'y']:
+                            _sentence = raw_data[name][start_index:end_index]
+                            for _ in range(padding_count):
+                                if name == 'x':
+                                    _sentence.append(self.padding_comma)
+                                else:
+                                    _sentence.append(0)  # x和y都padding成0
+                            result_data[name].append(_sentence)
+                        sentence_lengths.append(end_index-start_index)
                         start_index = index+1
                     index += 1
-                tools.check_sentence_length(y_final, control=self.check_control['sentence_length'])
-                x_sub.extend(x_final)
-                y_sub.extend(y_final)
+            tools.check_sentence_length(y_sub, control=self.check_control['sentence_length'])
             np.save(middle_path+'x_sub.npy', x_sub)
             np.save(middle_path+'y_sub.npy', y_sub)
             np.save(middle_path+'sentence_lengths.npy', sentence_lengths)
@@ -425,8 +424,9 @@ class DataProcess(object):
         # 获得x的词位置标记
         x_with_inword_tag = tools.add_in_word_index(x_sub)
         # 将x_sub2和y_sub保存成按batch的npz
-        self._make_batch(x_sub2, y_sub, sentence_lengths, x_with_inword_tag,
-                         self.validation_percentage, self.train_output_path)
+        datas = {'X': x_sub2, 'y': y_sub, 'len': sentence_lengths, 'inword': x_with_inword_tag}
+        self._make_batch(datas, self.train_output_path,
+                         batch_size=self.batch_size, validation_percentage=self.validation_percentage)
         return None
 
     def make_submit_data(self, char_dictionary):  # char_dictionary
@@ -448,33 +448,19 @@ class DataProcess(object):
                 if data in self.commas:
                     # print('i find the commas in the index: %d' % index)
                     sentence_length = index-start_index
-                    if sentence_length < self.time_step:
-                        sentence = raw_data[start_index:index]
-                        sentence.extend([self.padding_comma for _ in range(self.time_step-sentence_length)])
+                    while sentence_length > 0:
+                        end_index = min(start_index + self.time_step, index)
+                        padding_count = len([x for x in range(self.time_step - sentence_length)])
+                        _sentence = raw_data[start_index:end_index]
+                        _sentence.extend([self.padding_comma for _ in range(padding_count)])
 
-                        submit_final.append(sentence)
-                        submit_sentence_length.append(index - start_index)
-                        is_comma.append(1)
+                        submit_final.append(_sentence)  # append data
+                        submit_sentence_length.append(self.time_step - padding_count)  # append length
+                        is_comma.append(int(padding_count > 0))  # append is_comma tag
                         file_belong.append(self.file2batch_relationship[re.split('\\\\', submit_file_path)[-1]])
-                    else:
-                        # 对长度超过150的句子进行重复截取，最终不足的再padding
-                        remain_length = sentence_length
-                        while remain_length > 0:
-                            end_index = min(start_index+self.time_step, index)
-                            if remain_length > self.time_step:
-                                padding_count = 0
-                            else:
-                                padding_count = self.time_step-remain_length
-                            _sentence = raw_data[start_index:end_index]
-                            _sentence.extend([self.padding_comma for _ in range(padding_count)])
 
-                            submit_final.append(_sentence)  # append data
-                            submit_sentence_length.append(self.time_step - padding_count)  # append length
-                            is_comma.append(int(padding_count > 0))  # append is_comma tag
-                            file_belong.append(self.file2batch_relationship[re.split('\\\\', submit_file_path)[-1]])
-
-                            remain_length -= self.time_step
-                            start_index += self.time_step-padding_count
+                        sentence_length -= self.time_step
+                        start_index += self.time_step - padding_count
                     start_index = index + 1
                 index += 1
             # 确认是否有最后一段数据。看了下目前的数据有3个文档拥有最后一项，由于内容无意义，所以未处理
@@ -485,6 +471,7 @@ class DataProcess(object):
         for sentence in submit_final:
             if len(sentence) == 0:
                 raise ValueError('there is empty sentence in data')
+        print('total length is: ', len(submit_final))
         # 映射为数字
         for sentence in submit_final:
             temp_sentence = []
@@ -494,23 +481,9 @@ class DataProcess(object):
         # 获得in word index tag
         submit_with_inword_tag = tools.add_in_word_index(submit_final)
         # make batch
-        sample_num = len(result)  # print('the sample num is: ', sample_num)
-        batch_num = 0
-        for start in range(0, sample_num, self.submit_batch_size):
-            submit_batch_path = self.__submit_output_path + str(batch_num) + '.npz'
-            end = min(start+self.submit_batch_size, sample_num)
-
-            submit_batch = result[start:end]
-            sentence_length_batch = submit_sentence_length[start:end]
-            submit_file_belong = file_belong[start:end]
-            is_comma_batch = is_comma[start:end]
-            _with_inword_tag = submit_with_inword_tag[start:end]
-
-            np.savez(submit_batch_path,
-                     X=submit_batch, len=sentence_length_batch, belong=submit_file_belong,
-                     comma=is_comma_batch, inword=_with_inword_tag)
-            batch_num += 1
-        print('submit batch is done')
+        sub_datas = {'X': result, 'len': submit_sentence_length, 'belong': file_belong,
+                     'comma': is_comma, 'inword': submit_with_inword_tag}
+        self._make_batch(sub_datas, self.__submit_output_path, batch_size=self.submit_batch_size)
 
     def make_oversampling_batch(self):
         target = 2000  # 按entity数量小于2000来处理
@@ -518,15 +491,16 @@ class DataProcess(object):
         over_x, over_y, over_length, over_inword = tools.make_oversampling(check_result, self.train_output_path,
                                                                            self.tags, self.tags_prefixes[0], target)
         n_batch_start = len(os.listdir(self.train_output_path))
-        self._make_batch(over_x, over_y, over_length, over_inword, 0, self.oversampling_path, batch_num=n_batch_start)
+        over_datas = {'X': over_x, 'y': over_y, 'len': over_length, 'inword': over_inword}
+        self._make_batch(over_datas, self.oversampling_path, batch_size=self.batch_size, batch_num=n_batch_start)
 
 
 def main():
     data_process = DataProcess()
 
     # 生成train和validation数据
-    data_process.make_data()
-    # 生成submit数据
+    # data_process.make_data()
+    # # 生成submit数据
     with open(data_process.middle_path + 'vocab_dict.pickle', 'rb') as handle:
         vocab_dict = pickle.load(handle)
     data_process.make_submit_data(vocab_dict)

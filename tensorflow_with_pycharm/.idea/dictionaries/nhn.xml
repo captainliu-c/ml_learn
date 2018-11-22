@@ -1,8 +1,23 @@
 <component name="ProjectDictionaryState">
   <dictionary name="nhn">
     <words>
+      <w>ckpt</w>
+      <w>conv</w>
+      <w>datas</w>
+      <w>dtype</w>
+      <w>inword</w>
+      <w>jieba</w>
+      <w>logits</w>
       <w>lstm</w>
       <w>mnist</w>
+      <w>mulit</w>
+      <w>outdata</w>
+      <w>pred</w>
+      <w>rawdata</w>
+      <w>relu</w>
+      <w>softmax</w>
+      <w>tanh</w>
+      <w>tvars</w>
     </words>
   </dictionary>
 </component>

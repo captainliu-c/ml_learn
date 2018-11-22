@@ -1,0 +1,2 @@
+model_checkpoint_path: "C:\\Users\\nhn\\Documents\\GitHub\\ml_learn\\tensorflow_with_pycharm\\nlp_competition/ckpt/bi_lstm_cnn_crf/model.ckpt-300"
+all_model_checkpoint_paths: "C:\\Users\\nhn\\Documents\\GitHub\\ml_learn\\tensorflow_with_pycharm\\nlp_competition/ckpt/bi_lstm_cnn_crf/model.ckpt-300"

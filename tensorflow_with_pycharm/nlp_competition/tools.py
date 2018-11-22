@@ -1,8 +1,13 @@
 import jieba
 import numpy as np
 import os
+import re
 from tqdm import tqdm
-from collections import Iterable
+from collections import Iterable, Counter
+import data_process
+import codecs
+
+DICT_PATH = r'C:\Users\nhn\Documents\GitHub\ml_learn\tensorflow_with_pycharm\nlp_competition\middle'
 
 
 def check_sentence_length(sentences, control=True):
@@ -196,8 +201,34 @@ def get_batch(data_path, data_id, is_submit=False):
 
 
 def get_jieba_dict():
-    pass
+    _process = data_process.DataProcess()
+    files_path = _process.y_files_path
+    middle_path = DICT_PATH + '\dictionary.txt'
+    # choose_entity = ['Test_Value', 'Level', 'Symptom']  # Test, raw data: <6%
+    raw_entity_list = []
+    count = 0
+    target = 50
+    for file_path in files_path:
+        with open(file_path, 'rb') as f:
+            file = f.read().decode('utf-8')
+        file = re.split('\n', file)
+        target_delete(file)
+        for sentence in file:
+            sentence_list = re.split('\t', sentence)
+            raw_entity = sentence_list[-1]
+            raw_entity_list.append(raw_entity)
+            # entity_type = re.split('\s', sentence_list[1])[0]
+            # print('entity type: %s, raw data: %s' % (entity_type, raw_entity))
+    unique_with_count = Counter(raw_entity_list).most_common(28300)  # length=28272
+    for data in unique_with_count:
+        if data[1] > target and (data[0].count(' ') == 0):
+            write = data[0] + ' ' + str(data[1]) + '\n'
+            with codecs.open(middle_path, 'a', encoding='utf-8') as f:
+                f.write(write)
+            count += 1
+    print('done, the file length is: ', count)
 
 
 if __name__ == '__main__':
-    print(list(jieba.cut('我是大白菜')))
+    # get_jieba_dict()
+    pass

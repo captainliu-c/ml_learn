@@ -64,35 +64,41 @@
     <session id="1501712963">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="16" />
+          <entry key="project.closed" value="61" />
           <entry key="project.open.time.0" value="1" />
-          <entry key="project.open.time.6" value="5" />
-          <entry key="project.open.time.7" value="8" />
-          <entry key="project.open.time.8" value="3" />
-          <entry key="project.opened" value="17" />
+          <entry key="project.open.time.3" value="2" />
+          <entry key="project.open.time.4" value="13" />
+          <entry key="project.open.time.5" value="17" />
+          <entry key="project.open.time.6" value="12" />
+          <entry key="project.open.time.7" value="10" />
+          <entry key="project.open.time.8" value="4" />
+          <entry key="project.opened" value="61" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="Python Console" value="4" />
-          <entry key="py" value="9425" />
+          <entry key="data_process" value="2" />
+          <entry key="py" value="80960" />
+          <entry key="train" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="9429" />
+          <entry key="Python" value="80967" />
+          <entry key="RegExp" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="pstat" value="1" />
-          <entry key="py" value="19" />
+          <entry key="py" value="293" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="Profiler Session" value="1" />
-          <entry key="Python" value="19" />
+          <entry key="Python" value="293" />
         </counts>
       </usages-collector>
     </session>
@@ -103,18 +109,12 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/kaggle_mnist_lstm.py">
+        <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/prediction.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="629">
-              <caret line="127" lean-forward="true" selection-start-line="127" selection-end-line="127" />
+            <state relative-caret-position="43">
+              <caret line="53" column="30" selection-start-line="53" selection-start-column="30" selection-end-line="53" selection-end-column="30" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
-                <element signature="e#207#849#0" />
-                <element signature="e#901#1792#0" />
-                <element signature="e#2223#2419#0" />
-                <marker date="1536643045672" expanded="true" signature="366:382" ph="..." />
-                <marker date="1536643045672" expanded="true" signature="1827:1828" ph="..." />
-                <marker date="1536643045672" expanded="true" signature="2336:2341" ph="..." />
               </folding>
             </state>
           </provider>
@@ -132,6 +132,33 @@
   <component name="FindInProjectRecents">
     <findStrings>
       <find>astype</find>
+      <find>5087</find>
+      <find>zip</find>
+      <find>356</find>
+      <find>353</find>
+      <find>__sentence_mini_length</find>
+      <find>check_entity_control</find>
+      <find>control</find>
+      <find>commas</find>
+      <find>target</find>
+      <find>其中生活</find>
+      <find>sentence_mini_length</find>
+      <find>中</find>
+      <find>potentials</find>
+      <find>batch</find>
+      <find>print</find>
+      <find>Level</find>
+      <find>files.</find>
+      <find>SUMMARY_PATH</find>
+      <find>feed</find>
+      <find>middle</find>
+      <find>middle_path</find>
+      <find>is_make_data</find>
+      <find>make_batch</find>
+      <find>Iterable</find>
+      <find>Counter</find>
+      <find>jieba</find>
+      <find>padding_comma</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -149,7 +176,29 @@
         <option value="$PROJECT_DIR$/test_inputdata.py" />
         <option value="$PROJECT_DIR$/temp_inputdata.py" />
         <option value="$PROJECT_DIR$/kaggle_mnist_cnn.py" />
+        <option value="$PROJECT_DIR$/CIFAR-10/cifar10_train.py" />
+        <option value="$PROJECT_DIR$/CIFAR-10/__init__.py" />
+        <option value="$PROJECT_DIR$/CIFAR-10/cifar10.py" />
+        <option value="$PROJECT_DIR$/CIFAR-10/cifar10_input.py" />
         <option value="$PROJECT_DIR$/kaggle_mnist_lstm.py" />
+        <option value="$PROJECT_DIR$/basic_formal_from_tensotflowbook/mnist_eval.py" />
+        <option value="$PROJECT_DIR$/basic_formal_from_tensotflowbook/mnist_inference.py" />
+        <option value="$PROJECT_DIR$/basic_formal_from_tensotflowbook/mnist_train.py" />
+        <option value="$PROJECT_DIR$/basic_formal_from_tensorflowbook/mnist_eval.py" />
+        <option value="$PROJECT_DIR$/basic_formal_from_tensorflowbook/mnist_inference.py" />
+        <option value="$PROJECT_DIR$/basic_formal_from_tensorflowbook/mnist_train.py" />
+        <option value="$PROJECT_DIR$/transfer_learning/main.py" />
+        <option value="$PROJECT_DIR$/transfer_learning/data_clean.py" />
+        <option value="$PROJECT_DIR$/bi_directional_lstm.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_crf/train.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_crf/prediction.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/network.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_crf/network.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/tools.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/tools.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/train.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/data_process.py" />
+        <option value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/prediction.py" />
       </list>
     </option>
   </component>
@@ -159,9 +208,8 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
-    <option name="x" value="56" />
-    <option name="y" value="-8" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="47" />
     <option name="width" value="1401" />
     <option name="height" value="981" />
   </component>
@@ -178,6 +226,24 @@
             <path>
               <item name="tensorflow_with_pycharm" type="b2602c69:ProjectViewProjectNode" />
               <item name="tensorflow_with_pycharm" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="tensorflow_with_pycharm" type="b2602c69:ProjectViewProjectNode" />
+              <item name="tensorflow_with_pycharm" type="462c0819:PsiDirectoryNode" />
+              <item name="nlp_competition" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="tensorflow_with_pycharm" type="b2602c69:ProjectViewProjectNode" />
+              <item name="tensorflow_with_pycharm" type="462c0819:PsiDirectoryNode" />
+              <item name="nlp_competition" type="462c0819:PsiDirectoryNode" />
+              <item name="models" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="tensorflow_with_pycharm" type="b2602c69:ProjectViewProjectNode" />
+              <item name="tensorflow_with_pycharm" type="462c0819:PsiDirectoryNode" />
+              <item name="nlp_competition" type="462c0819:PsiDirectoryNode" />
+              <item name="models" type="462c0819:PsiDirectoryNode" />
+              <item name="bilstm_cnn_crf" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -197,6 +263,14 @@
       </console-settings>
     </option>
   </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\nhn\Documents\GitHub\ml_learn\tensorflow_with_pycharm\nlp_competition\models\bilstm_cnn_crf" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\nhn\Documents\GitHub\ml_learn\tensorflow_with_pycharm\basic_formal_from_tensotflowbook" />
+    </key>
+  </component>
   <component name="RunDashboard">
     <option name="ruleStates">
       <list>
@@ -209,7 +283,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.kaggle_mnist_lstm">
+  <component name="RunManager" selected="Python.prediction (1)">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -232,7 +306,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="kaggle_mnist_cnn" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="data_process" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -240,12 +314,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nlp_competition" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/kaggle_mnist_cnn.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nlp_competition/data_process.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -254,17 +328,17 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="kaggle_mnist_lstm" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="prediction (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/kaggle_mnist_lstm.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/prediction.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -273,7 +347,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="temp_inputdata" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="tools (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -281,66 +355,78 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/temp_inputdata.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/tools.py" />
       <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
       <option name="REDIRECT_INPUT" value="false" />
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="pytest in kaggle_mnist_lstm.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+    <configuration name="tools" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nlp_competition" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="_new_keywords" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/kaggle_mnist_lstm.py&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <option name="SCRIPT_NAME" value="C:\Users\nhn\Documents\GitHub\ml_learn\tensorflow_with_pycharm\nlp_competition\models\bilstm_cnn_crf\tools.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="pytest in test_inputdata.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+    <configuration name="train (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="tensorflow_with_pycharm" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="_new_keywords" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/test_inputdata.py&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/train.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python tests.pytest in test_inputdata.py" />
-      <item itemvalue="Python.temp_inputdata" />
-      <item itemvalue="Python.kaggle_mnist_cnn" />
-      <item itemvalue="Python tests.pytest in kaggle_mnist_lstm.py" />
-      <item itemvalue="Python.kaggle_mnist_lstm" />
+      <item itemvalue="Python.data_process" />
+      <item itemvalue="Python.train (1)" />
+      <item itemvalue="Python.prediction (1)" />
+      <item itemvalue="Python.tools" />
+      <item itemvalue="Python.tools (1)" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.kaggle_mnist_lstm" />
-        <item itemvalue="Python.kaggle_mnist_cnn" />
-        <item itemvalue="Python tests.pytest in kaggle_mnist_lstm.py" />
-        <item itemvalue="Python.temp_inputdata" />
-        <item itemvalue="Python tests.pytest in test_inputdata.py" />
+        <item itemvalue="Python.prediction (1)" />
+        <item itemvalue="Python.train (1)" />
+        <item itemvalue="Python.data_process" />
+        <item itemvalue="Python.tools (1)" />
+        <item itemvalue="Python.tools" />
       </list>
     </recent_temporary>
   </component>
@@ -399,33 +485,57 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1456" height="876" extended-state="7" />
-    <editor active="true" />
+    <frame x="-8" y="-8" width="1456" height="876" extended-state="6" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.4979757" weight="0.10673352" />
-      <window_info id="Structure" order="1" sideWeight="0.5020243" side_tool="true" weight="0.1790831" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49662617" visible="true" weight="0.1854725" />
+      <window_info id="Structure" order="1" sideWeight="0.5033738" side_tool="true" weight="0.16925247" />
       <window_info id="Favorites" order="2" side_tool="true" weight="0.3295129" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32928476" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.3508772" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4980143" weight="0.32523617" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4980143" weight="0.9325236" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32793522" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32793522" />
-      <window_info anchor="bottom" id="Terminal" order="8" sideWeight="0.49960285" weight="1.0" />
-      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.5028653" side_tool="true" weight="0.31578946" />
-      <window_info anchor="bottom" id="Python Console" order="10" sideWeight="0.49713466" weight="0.41160592" />
+      <window_info anchor="bottom" id="Terminal" order="8" sideWeight="0.49960285" weight="0.6693657" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50423133" side_tool="true" weight="0.659919" />
+      <window_info active="true" anchor="bottom" id="Python Console" order="10" sideWeight="0.4957687" visible="true" weight="0.75843453" />
       <window_info anchor="bottom" id="Docker" order="11" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" order="12" show_stripe_button="false" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" x="0" y="0" width="314" height="676" id="Documentation" order="3" sideWeight="0.5006748" side_tool="true" visible="true" weight="0.26862463" />
+      <window_info anchor="right" x="0" y="0" width="314" height="676" id="Documentation" order="3" sideWeight="0.5006748" side_tool="true" weight="0.26862463" />
       <window_info anchor="right" id="Database" order="4" sideWeight="0.49932525" weight="0.3295129" />
       <window_info anchor="right" id="SciView" order="5" sideWeight="0.49932525" weight="0.3295129" />
       <window_info anchor="right" id="Coverage" order="6" side_tool="true" />
     </layout>
+    <layout-to-restore>
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49662617" visible="true" weight="0.13751763" />
+      <window_info id="Structure" order="1" sideWeight="0.5033738" side_tool="true" weight="0.16925247" />
+      <window_info id="Favorites" order="2" side_tool="true" weight="0.3295129" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32928476" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.3508772" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4980143" weight="0.9325236" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.32793522" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.32793522" />
+      <window_info anchor="bottom" id="Terminal" order="8" sideWeight="0.49960285" weight="0.6693657" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50423133" side_tool="true" weight="0.659919" />
+      <window_info anchor="bottom" id="Python Console" order="10" sideWeight="0.4957687" weight="0.6005398" />
+      <window_info anchor="bottom" id="Docker" order="11" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Database Changes" order="12" show_stripe_button="false" />
+      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" x="0" y="0" width="314" height="676" id="Documentation" order="3" sideWeight="0.5006748" side_tool="true" weight="0.26862463" />
+      <window_info anchor="right" id="Database" order="4" sideWeight="0.49932525" weight="0.3295129" />
+      <window_info anchor="right" id="SciView" order="5" sideWeight="0.49932525" weight="0.3295129" />
+      <window_info anchor="right" id="Coverage" order="6" side_tool="true" />
+    </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
@@ -433,105 +543,352 @@
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
+  <component name="XDebuggerManager">
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="temp_test[0]" />
+      </configuration>
+    </watches-manager>
+  </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/tensorflow/python/framework/ops.py">
+    <entry file="file://$PROJECT_DIR$/basic_formal_from_tensotflowbook/mnist_inference.py" />
+    <entry file="file://$PROJECT_DIR$/basic_formal_from_tensotflowbook/mnist_train.py" />
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/training/adam.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="31">
-          <caret line="4936" selection-start-line="4936" selection-end-line="4936" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/_pytest/assertion/rewrite.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1010">
-          <caret line="211" selection-start-line="211" selection-end-line="211" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_inputdata.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="132">
-          <caret line="6" column="12" lean-forward="true" selection-end-line="16" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/.PyCharm2018.2/system/python_stubs/54210026/builtins.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="281">
-          <caret line="790" column="8" selection-start-line="790" selection-start-column="8" selection-end-line="790" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/input_data.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="283">
-          <caret line="162" column="43" lean-forward="true" selection-start-line="162" selection-start-column="43" selection-end-line="162" selection-end-column="43" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/framework/errors_impl.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="176">
-          <caret line="86" selection-start-line="86" selection-end-line="86" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/codecs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="168">
-          <caret line="331" selection-start-line="331" selection-end-line="331" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/framework/ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="116">
-          <caret line="1578" selection-start-line="1578" selection-end-line="1578" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/kaggle_mnist_cnn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="401">
-          <caret line="90" column="81" lean-forward="true" selection-start-line="90" selection-start-column="81" selection-end-line="90" selection-end-column="81" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mnist_cnn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="1" selection-end-line="1" />
+        <state relative-caret-position="-2855">
+          <caret line="39" column="6" selection-start-line="39" selection-start-column="6" selection-end-line="39" selection-end-column="6" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/temp_inputdata.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1153">
-          <caret line="96" lean-forward="true" selection-start-line="96" selection-end-line="96" />
+        <state relative-caret-position="247">
+          <caret line="90" column="18" selection-start-line="90" selection-start-column="18" selection-end-line="90" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/training/saver.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-662">
+          <caret line="1704" column="35" selection-start-line="1704" selection-start-column="35" selection-end-line="1704" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/basic_formal_from_tensorflowbook/mnist_eval.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="493">
+          <caret line="43" column="48" selection-start-line="43" selection-start-column="48" selection-end-line="43" selection-end-column="48" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/variables.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="214" column="24" selection-start-line="214" selection-start-column="24" selection-end-line="214" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/framework/constant_op.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="116" column="4" selection-start-line="116" selection-start-column="4" selection-end-line="116" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/basic_formal_from_tensorflowbook/mnist_inference.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="612">
+          <caret line="34" lean-forward="true" selection-start-line="34" selection-end-line="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/training/optimizer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="319">
+          <caret line="363" column="46" selection-start-line="363" selection-start-column="46" selection-end-line="363" selection-end-column="46" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/basic_formal_from_tensorflowbook/mnist_train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="656">
+          <caret line="37" column="45" selection-start-line="37" selection-start-column="45" selection-end-line="37" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/transfer_learning/main.py" />
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/glob.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="216">
+          <caret line="14" column="13" lean-forward="true" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/os.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="292">
+          <caret line="279" column="33" selection-start-line="279" selection-start-column="33" selection-end-line="279" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharmCE2018.2/system/python_stubs/54210026/numpy/random/mtrand.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="148">
+          <caret line="2031" column="49" selection-start-line="2031" selection-start-column="49" selection-end-line="2031" selection-end-column="49" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/transfer_learning/data_clean.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="979">
+          <caret line="66" column="38" selection-start-line="66" selection-start-column="38" selection-end-line="66" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/kaggle_mnist_cnn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="72">
+          <caret line="5" selection-start-line="5" selection-end-line="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bi_directional_lstm.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="540">
+          <caret line="69" column="34" lean-forward="true" selection-start-line="69" selection-start-column="34" selection-end-line="69" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/numpy/lib/npyio.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="496">
+          <caret line="1269" column="45" selection-start-line="1269" selection-start-column="34" selection-end-line="1269" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharmCE2018.2/system/python_stubs/54210026/builtins.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="4167" column="8" selection-start-line="4167" selection-start-column="8" selection-end-line="4167" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="634">
+          <caret line="1663" selection-start-line="1663" selection-end-line="1663" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/training/learning_rate_decay.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="436">
+          <caret line="43" column="48" lean-forward="true" selection-start-line="43" selection-start-column="48" selection-end-line="43" selection-end-column="48" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/gen_math_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="37">
+          <caret line="2630" column="4" selection-start-line="2630" selection-start-column="4" selection-end-line="2630" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/gen_array_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-734">
+          <caret line="6125" column="4" selection-start-line="6125" selection-start-column="4" selection-end-line="6125" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/client/session.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="154">
+          <caret line="871" selection-start-line="871" selection-end-line="871" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/math_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="507">
+          <caret line="1426" column="23" lean-forward="true" selection-start-line="1426" selection-start-column="23" selection-end-line="1426" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="17" column="57" selection-start-line="17" selection-start-column="57" selection-end-line="17" selection-end-column="57" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/gradients_impl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-392">
+          <caret line="506" column="4" selection-start-line="506" selection-start-column="4" selection-end-line="506" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/contrib/crf/python/ops/crf.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="12">
+          <caret line="186" column="44" selection-start-line="186" selection-end-line="187" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/framework/sparse_tensor.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5">
+          <caret line="133" selection-start-line="133" selection-end-line="133" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/rnn_cell_impl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="508">
+          <caret line="551" column="67" selection-start-line="551" selection-start-column="60" selection-end-line="551" selection-end-column="67" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/core/protobuf/config_pb2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="22">
+          <caret line="1140" selection-start-line="1140" selection-end-line="1140" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/idlelib/editor.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1642">
+          <caret line="566" column="8" selection-start-line="566" selection-start-column="8" selection-end-line="566" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/array_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="292">
+          <caret line="1029" column="7" lean-forward="true" selection-start-line="1029" selection-start-column="7" selection-end-line="1029" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/tools.py" />
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/jieba/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4324">
+          <caret line="495" column="14" selection-start-line="495" selection-start-column="5" selection-end-line="495" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/contrib/rnn/python/ops/rnn_cell.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="292">
+          <caret line="129" column="6" selection-start-line="129" selection-start-column="6" selection-end-line="129" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_crf/prediction.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="403">
+          <caret line="150" column="49" selection-start-line="150" selection-start-column="49" selection-end-line="150" selection-end-column="49" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/random_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="18">
+          <caret line="184" column="4" selection-start-line="184" selection-start-column="4" selection-end-line="184" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/gen_nn_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="253">
+          <caret line="4701" column="4" selection-start-line="4701" selection-start-column="4" selection-end-line="4701" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/ops/nn_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="2126" column="4" selection-start-line="2126" selection-start-column="4" selection-end-line="2126" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/site-packages/tensorflow/python/layers/pooling.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="253">
+          <caret line="128" column="4" selection-start-line="128" selection-start-column="4" selection-end-line="128" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_crf/train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1026">
+          <caret line="57" selection-start-line="57" selection-end-line="57" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_crf/network.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="828">
+          <caret line="46" column="27" selection-start-line="46" selection-start-column="27" selection-end-line="46" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/re.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="182">
+          <caret line="203" column="4" selection-start-line="203" selection-start-column="4" selection-end-line="203" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/envs/tensorflow_with_pycharm/Lib/typing.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="154">
+          <caret line="2323" column="8" selection-start-line="2323" selection-start-column="8" selection-end-line="2323" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nlp_competition/data_process.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="370">
+          <caret line="303" column="38" selection-start-line="303" selection-start-column="28" selection-end-line="303" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/tools.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4050">
+          <caret line="232" column="22" selection-start-line="232" selection-start-column="22" selection-end-line="232" selection-end-column="22" />
           <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <marker date="1536117395092" expanded="true" signature="133:454" ph="..." />
-            <marker date="1536117395092" expanded="true" signature="692:726" ph="..." />
-            <marker date="1536117395092" expanded="true" signature="827:1048" ph="..." />
+            <element signature="e#0#12#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kaggle_mnist_lstm.py">
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="629">
-          <caret line="127" lean-forward="true" selection-start-line="127" selection-end-line="127" />
+        <state relative-caret-position="396">
+          <caret line="22" column="14" selection-start-line="22" selection-start-column="14" selection-end-line="22" selection-end-column="14" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
-            <element signature="e#207#849#0" />
-            <element signature="e#901#1792#0" />
-            <element signature="e#2223#2419#0" />
-            <marker date="1536643045672" expanded="true" signature="366:382" ph="..." />
-            <marker date="1536643045672" expanded="true" signature="1827:1828" ph="..." />
-            <marker date="1536643045672" expanded="true" signature="2336:2341" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/network.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="432">
+          <caret line="29" lean-forward="true" selection-start-line="29" selection-end-line="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nlp_competition/models/bilstm_cnn_crf/prediction.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="43">
+          <caret line="53" column="30" selection-start-line="53" selection-start-column="30" selection-end-line="53" selection-end-column="30" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
           </folding>
         </state>
       </provider>

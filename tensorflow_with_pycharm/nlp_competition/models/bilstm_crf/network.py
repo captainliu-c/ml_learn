@@ -9,8 +9,8 @@ from tensorflow.contrib.layers.python.layers import initializers
 class Settings(object):
     def __init__(self):
         self.model_name = 'bi_lstm_crf'
-        self.embedding_size = 100  # 即使500的话，效果也不好
-        self.hidden_size = 100  # 即使500的话，效果也不好
+        self.embedding_size = 200  # 即使500的话，效果也不好
+        self.hidden_size = 200  # 即使500的话，效果也不好
         self.layers_num = 1
         self.embed_dropout_prob = 1.0
         self.seq_dim = 40
@@ -166,12 +166,11 @@ class BiLstmCRF(object):
             with tf.variable_scope(direction):
                 lstm_cell[direction] = rnn.MultiRNNCell(
                     [basic_cell(self.hidden_size, self.initializer) for _ in range(self.layers_num)])
-
         (outputs_fw, outputs_bw), _ = tf.nn.bidirectional_dynamic_rnn(
             cell_fw=lstm_cell['forward'], cell_bw=lstm_cell['backward'], inputs=inputs,
             sequence_length=self.sentence_lengths, dtype=tf.float32)
-
         outputs = tf.concat([outputs_fw, outputs_bw], axis=-1)
+
         return outputs
 
 
